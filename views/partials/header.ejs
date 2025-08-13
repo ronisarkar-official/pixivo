@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0" />
+		<title>Pinterest Style Auth Modal</title>
+		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+		<link
+			href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+			rel="stylesheet" />
+	</head>
+
+	<body class="bg-zinc-900 text-white font-sans min-h-screen w-full">
+		<header class="antialiased shadow-sm">
+			<nav
+				class="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 dark:bg-gray-800 dark:border-gray-700">
+				<div class="flex justify-between items-center">
+					<!-- Left Section -->
+					<div class="flex items-center gap-3">
+						<!-- Sidebar Toggle (Desktop) -->
+
+						<!-- Sidebar Toggle (Mobile) -->
+
+						<!-- Logo -->
+						<a
+							href="/"
+							class="flex items-center gap-2">
+							<img
+								src="https://flowbite.s3.amazonaws.com/logo.svg"
+								alt="FlowBite Logo"
+								class="h-8" />
+							<span class="text-xl font-semibold text-gray-800 dark:text-white"
+								>Pintrest</span
+							>
+						</a>
+					</div>
+
+					<!-- Right Section -->
+					<div class="items-center flex gap-4"
+						><a
+							href="/feed"
+							class="hidden md:block text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+							Home
+						</a>
+						<a
+							href="#"
+							class="hidden md:block text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+							feed
+						</a>
+						<a
+							href="#"
+							class="hidden md:block text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+							explore
+						</a>
+					</div>
+					<!-- Navigation Link -->
+
+					<div class="flex items-center gap-4">
+						<!-- User Menu -->
+						<div class="relative">
+							<button
+								type="button"
+								class="flex items-center justify-center w-9 h-9 bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600 cursor-pointer"
+								id="user-menu-button"
+								aria-expanded="false"
+								data-dropdown-toggle="dropdown">
+								<span class="sr-only">Open user menu</span>
+								<img
+									class="w-9 h-9 rounded-full object-cover"
+									src="/images/uploads/<%= user.profileimage || 'defaultpic.jpg' %>"
+									alt="User avatar" />
+							</button>
+
+							<!-- Dropdown -->
+							<div
+								id="dropdown"
+								class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg divide-y divide-gray-100 dark:bg-gray-700 dark:divide-gray-600 z-50">
+								<div class="px-4 py-3">
+									<p class="text-sm font-semibold text-gray-900 dark:text-white"
+										><%= user.fullname %></p
+									>
+									<p class="text-sm text-gray-500 truncate dark:text-gray-400"
+										><%= user.email %></p
+									>
+								</div>
+								<ul class="py-1">
+									<li>
+										<a
+											href="/profile"
+											class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+											>My Profile</a
+										>
+									</li>
+									<li>
+										<a
+											href="#"
+											class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+											>Account Settings</a
+										>
+									</li>
+								</ul>
+								<ul class="py-1">
+									<li>
+										<a
+											href="/logout"
+											class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-red-400"
+											>Log Out</a
+										>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</nav>
+		</header>

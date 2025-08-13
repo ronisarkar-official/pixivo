@@ -1,0 +1,398 @@
+<% include ./partials/header.ejs %> <% const safePosts = Array.isArray(posts) ?
+posts.slice() : []; const getDate = p => new Date(p.createdAt || p.created_at ||
+p.date || p.timestamp || p.time || 0).getTime(); safePosts.sort((a,b) =>
+getDate(b) - getDate(a)); %>
+
+<div class="max-w-5xl mx-auto mt-10">
+	<div class="columns-1 sm:columns-2 lg:columns-4 gap-4 space-y-4">
+		<% safePosts.forEach((elem, idx) => { %>
+		<div
+			class="break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300 cursor-pointer"
+			data-image="/images/uploads/<%= elem.image %>"
+			data-title="<%= elem.imageTitle %>"
+			data-desc="<%= elem.imageDesc || '' %>"
+			data-index="<%= idx %>"
+			data-author-fullname="<%= (elem.author && elem.author.fullname) || (elem.user && elem.user.fullname) || 'Unknown' %>"
+			data-author-username="<%= (elem.author && elem.author.username) || (elem.user && elem.user.username) || '' %>"
+			data-author-image="/images/uploads/<%= (elem.author && elem.author.profileimage) || (elem.user && elem.user.profileimage) || 'defaultpic.jpg' %>">
+			<img
+				src="/images/uploads/<%= elem.image %>"
+				alt="<%= elem.imageTitle %>"
+				class="w-full object-cover rounded-lg"
+				loading="lazy" />
+			<% if (elem.imageDesc) { %>
+			<div class="p-3 text-sm text-white"><%= elem.imageTitle %></div>
+			<% } %>
+		</div>
+		<% }) %>
+	</div>
+</div>
+
+<!-- Pinterest-like Modal -->
+<div
+	id="imageModal"
+	class="fixed inset-0 z-60 hidden">
+	<!-- overlay -->
+	<div
+		id="modalBackdrop"
+		class="absolute inset-0 bg-black/65 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+
+	<!-- centered modal panel -->
+	<div
+		id="modalPanel"
+		class="relative mx-auto my-10 max-w-6xl w-[95%] lg:w-[90%] opacity-0 scale-95 transform transition-all duration-300 pointer-events-none">
+		<div
+			class="bg-[#0f1720] rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row">
+			<!-- Left: image area -->
+			<div class="relative lg:flex-1 lg:min-w-[60%] p-6 lg:p-8">
+				<!-- floating action buttons on image -->
+				<div
+					class="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-30">
+					<button
+						id="expandBtn"
+						title="Open in new tab"
+						class="w-11 h-11 rounded-full bg-black/50 border border-white/10 text-white flex items-center justify-center hover:bg-black/70 transition">
+						<i class="ri-fullscreen-line text-lg"></i>
+					</button>
+					<button
+						id="rotateBtn"
+						title="Rotate"
+						class="w-11 h-11 rounded-full bg-black/50 border border-white/10 text-white flex items-center justify-center hover:bg-black/70 transition">
+						<i class="ri-refresh-line text-lg"></i>
+					</button>
+				</div>
+
+				<!-- main image container (fixed/responsive) -->
+				<!-- image container: responsive, centered, capped to viewport -->
+				<div
+					id="modalImageWrap"
+					class="rounded-2xl overflow-hidden mx-auto shadow-lg w-full max-w-[820px] max-h-[88vh] flex items-center justify-center">
+					<img
+						id="modalImage"
+						src=""
+						alt=""
+						class="max-w-full max-h-[78vh] w-auto h-auto object-contain transition-transform duration-300" />
+				</div>
+			</div>
+
+			<!-- Right: info panel -->
+			<div class="lg:w-[40%] p-6 md:p-8 flex flex-col gap-4 text-white">
+				<!-- header (author + actions) -->
+				<div class="flex items-center justify-between gap-4">
+					<div class="flex items-center gap-3">
+						<img
+							id="modalAuthorImg"
+							src="/images/uploads/defaultpic.jpg"
+							alt="author"
+							class="w-10 h-10 rounded-full object-cover border border-white/10" />
+						<div>
+							<div
+								id="modalAuthorName"
+								class="font-semibold text-sm"
+								>Unknown</div
+							>
+							<div
+								id="modalAuthorUsername"
+								class="text-xs text-white/70"
+								>@unknown</div
+							>
+						</div>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<button
+							id="followBtn"
+							class="px-3 py-1 text-sm rounded-md border border-white/10 text-white/90 hover:bg-white/5 transition"
+							>Follow</button
+						>
+						<button
+							id="closeModalBtn"
+							title="Close"
+							class="w-9 h-9 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/10 transition">
+							<i class="ri-close-fill text-lg"></i>
+						</button>
+					</div>
+				</div>
+
+				<!-- Title & description -->
+				<div>
+					<h2
+						id="modalTitle"
+						class="text-2xl lg:text-3xl font-extrabold leading-tight"></h2>
+					<p
+						id="modalDesc"
+						class="mt-3 text-sm lg:text-base text-white/85 leading-relaxed"></p>
+				</div>
+
+				<!-- stats and actions row -->
+				<div class="flex items-center justify-between mt-2">
+					<div class="flex items-center gap-4 text-sm text-white/85">
+						<div class="flex items-center gap-2"
+							><i class="ri-heart-line"></i> <span id="likeCount">0</span></div
+						>
+						<div class="flex items-center gap-2"
+							><i class="ri-chat-1-line"></i>
+							<span id="commentCount">0</span></div
+						>
+						<div class="flex items-center gap-2"
+							><i class="ri-share-forward-line"></i> <span>Share</span></div
+						>
+					</div>
+					<div>
+						<button
+							class="px-3 py-1 rounded-md bg-white/5 hover:bg-white/10 text-sm transition"
+							>More</button
+						>
+					</div>
+				</div>
+
+				<!-- little comment box -->
+				<div class="mt-4">
+					<label class="text-xs text-white/70">Add a comment</label>
+					<div class="mt-2 flex items-center gap-2">
+						<input
+							id="commentInput"
+							type="text"
+							placeholder="Add a comment..."
+							class="flex-1 px-4 py-2 rounded-full bg-white/5 border border-white/6 text-sm outline-none focus:ring-2 focus:ring-white/10" />
+						<button
+							id="postComment"
+							class="px-4 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm"
+							>Post</button
+						>
+					</div>
+				</div>
+
+				<!-- thumbnails / related -->
+				<div class="mt-4">
+  <h3 class="text-sm text-white/70 mb-2">More like this</h3>
+  
+  <!-- Scrollable container -->
+  <div class="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-transparent">
+    <% posts.slice(0, 20).forEach((p) => { %>
+      <img
+        src="/images/uploads/<%= p.image %>"
+        class="w-full h-20 object-cover rounded-md border border-white/8 more-thumb"
+        loading="lazy"
+        data-thumb-image="/images/uploads/<%= p.image %>"
+        data-thumb-title="<%= p.imageTitle %>"
+        data-thumb-desc="<%= p.imageDesc || '' %>"
+        data-thumb-author-fullname="<%= (p.author && p.author.fullname) || (p.user && p.user.fullname) || 'Unknown' %>"
+        data-thumb-author-username="<%= (p.author && p.author.username) || (p.user && p.user.username) || '' %>"
+        data-thumb-author-image="/images/uploads/<%= (p.author && p.author.profileimage) || (p.user && p.user.profileimage) || 'defaultpic.jpg' %>"
+        alt="<%= p.imageTitle %>" />
+    <% }) %>
+  </div>
+</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	/* show/hide and transitions */
+	#imageModal.show {
+		display: block;
+	}
+	#imageModal.show #modalBackdrop {
+		opacity: 1;
+		pointer-events: auto;
+	}
+	#imageModal.show #modalPanel {
+		opacity: 1;
+		transform: none;
+		pointer-events: auto;
+	}
+</style>
+
+<script>
+	document.addEventListener('DOMContentLoaded', () => {
+		// DOM refs
+		const imageModal = document.getElementById('imageModal');
+		const modalBackdrop = document.getElementById('modalBackdrop');
+		const modalPanel = document.getElementById('modalPanel');
+		const modalImage = document.getElementById('modalImage');
+		const modalTitle = document.getElementById('modalTitle');
+		const modalDesc = document.getElementById('modalDesc');
+
+		const modalAuthorImg = document.getElementById('modalAuthorImg');
+		const modalAuthorName = document.getElementById('modalAuthorName');
+		const modalAuthorUsername = document.getElementById('modalAuthorUsername');
+
+		const closeBtns = Array.from(document.querySelectorAll('#closeModalBtn'));
+		const expandBtn = document.getElementById('expandBtn');
+		const rotateBtn = document.getElementById('rotateBtn');
+		const followBtn = document.getElementById('followBtn');
+		const postCommentBtn = document.getElementById('postComment');
+
+		// collections
+		const cards = Array.from(document.querySelectorAll('[data-index]')); // gallery cards
+		const thumbs = Array.from(document.querySelectorAll('.more-thumb')); // more-like-this thumbs
+
+		let currentIndex = -1;
+		let rotation = 0;
+
+		// helpers
+		function setAuthorFromCard(card) {
+			if (!card) return;
+			modalAuthorImg.src =
+				card.dataset.authorImage || '/images/uploads/defaultpic.jpg';
+			modalAuthorImg.alt = card.dataset.authorFullname || 'Author';
+			modalAuthorName.textContent = card.dataset.authorFullname || 'Unknown';
+			modalAuthorUsername.textContent = card.dataset.authorUsername
+				? '@' + card.dataset.authorUsername
+				: '';
+		}
+
+		function setAuthorFromThumb(thumb) {
+			if (!thumb) return;
+			modalAuthorImg.src =
+				thumb.dataset.thumbAuthorImage || '/images/uploads/defaultpic.jpg';
+			modalAuthorImg.alt = thumb.dataset.thumbAuthorFullname || 'Author';
+			modalAuthorName.textContent =
+				thumb.dataset.thumbAuthorFullname || 'Unknown';
+			modalAuthorUsername.textContent = thumb.dataset.thumbAuthorUsername
+				? '@' + thumb.dataset.thumbAuthorUsername
+				: '';
+		}
+
+		function open(index) {
+			const card = cards[index];
+			if (!card) return;
+			currentIndex = index;
+			rotation = 0;
+			modalImage.style.transform = 'rotate(0deg)';
+			modalImage.src = card.dataset.image;
+			modalImage.alt = card.dataset.title || '';
+			modalTitle.textContent = card.dataset.title || '';
+			modalDesc.textContent = card.dataset.desc || '';
+			setAuthorFromCard(card);
+
+			imageModal.classList.add('show');
+			// allow CSS transitions to run
+			setTimeout(() => imageModal.classList.add('visible'), 10);
+		}
+
+		function openByData(image, title = '', desc = '', thumb = null) {
+			// if this image exists in gallery, open that index (so navigation works)
+			const idx = cards.findIndex((c) => c.dataset.image === image);
+			if (idx !== -1) {
+				open(idx);
+				return;
+			}
+			// fallback: display direct image (thumb may provide author)
+			rotation = 0;
+			modalImage.style.transform = 'rotate(0deg)';
+			modalImage.src = image;
+			modalImage.alt = title;
+			modalTitle.textContent = title || '';
+			modalDesc.textContent = desc || '';
+			if (thumb) setAuthorFromThumb(thumb);
+			else {
+				// clear to defaults
+				modalAuthorImg.src = '/images/uploads/defaultpic.jpg';
+				modalAuthorName.textContent = 'Unknown';
+				modalAuthorUsername.textContent = '@unknown';
+			}
+			currentIndex = -1;
+			imageModal.classList.add('show');
+			setTimeout(() => imageModal.classList.add('visible'), 10);
+		}
+
+		function close() {
+			imageModal.classList.remove('visible');
+			setTimeout(() => {
+				imageModal.classList.remove('show');
+				modalImage.src = '';
+				modalTitle.textContent = '';
+				modalDesc.textContent = '';
+				currentIndex = -1;
+			}, 250);
+		}
+
+		function showNext() {
+			if (currentIndex === -1) return;
+			if (currentIndex < cards.length - 1) open(currentIndex + 1);
+		}
+		function showPrev() {
+			if (currentIndex === -1) return;
+			if (currentIndex > 0) open(currentIndex - 1);
+		}
+
+		// gallery open
+		cards.forEach((c, i) => c.addEventListener('click', () => open(i)));
+
+		// thumbs open
+		thumbs.forEach((t) => {
+			t.style.cursor = 'pointer';
+			t.addEventListener('click', (e) => {
+				e.stopPropagation();
+				openByData(
+					t.dataset.thumbImage,
+					t.dataset.thumbTitle || '',
+					t.dataset.thumbDesc || '',
+					t,
+				);
+			});
+		});
+
+		// close handlers
+		closeBtns.forEach((b) => b.addEventListener('click', close));
+		modalBackdrop.addEventListener('click', close);
+
+		// keyboard navigation
+		document.addEventListener('keydown', (e) => {
+			if (!imageModal.classList.contains('show')) return;
+			if (e.key === 'Escape') close();
+			if (e.key === 'ArrowRight') showNext();
+			if (e.key === 'ArrowLeft') showPrev();
+		});
+
+		// expand to new tab
+		expandBtn?.addEventListener('click', () => {
+			if (!modalImage.src) return;
+			window.open(modalImage.src, '_blank', 'noopener');
+		});
+
+		// rotate
+		rotateBtn?.addEventListener('click', () => {
+			rotation = (rotation + 90) % 360;
+			modalImage.style.transform = `rotate(${rotation}deg)`;
+		});
+
+		// follow button (placeholder behavior)
+		followBtn?.addEventListener('click', (e) => {
+			e.stopPropagation();
+			followBtn.textContent =
+				followBtn.textContent.trim() === 'Follow' ? 'Following' : 'Follow';
+		});
+
+		// post comment (placeholder)
+		postCommentBtn?.addEventListener('click', () => {
+			const input = document.getElementById('commentInput');
+			if (input && input.value.trim()) {
+				// replace with actual POST request in production
+				alert('Comment posted: ' + input.value.trim());
+				input.value = '';
+			}
+		});
+
+		// swipe support on modalPanel
+		let touchStartX = 0,
+			touchEndX = 0;
+		modalPanel?.addEventListener(
+			'touchstart',
+			(e) => (touchStartX = e.changedTouches[0].screenX),
+		);
+		modalPanel?.addEventListener('touchend', (e) => {
+			touchEndX = e.changedTouches[0].screenX;
+			const dist = touchEndX - touchStartX;
+			if (Math.abs(dist) > 50) {
+				if (dist < 0) showNext();
+				else showPrev();
+			}
+		});
+	});
+</script>
+
+<% include ./partials/footer.ejs %>

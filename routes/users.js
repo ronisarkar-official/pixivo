@@ -1,15 +1,11 @@
-const mongoose = require('mongoose');
 const plm = require('passport-local-mongoose');
-
-
 require('dotenv').config();
+const mongoose = require('mongoose');
 
-mongoose.set('strictQuery', false);
-
-mongoose.connect(process.env.MONGO_URI)
-	.then(() => console.log('✅ Connected to MongoDB Atlas'))
-	.catch((err) => console.error('❌ MongoDB connection error:', err));
-
+mongoose
+	.connect(process.env.MONGO_URI)
+	.then(() => console.log('✅ MongoDB Connected'))
+	.catch((err) => console.error('❌', err));
 
 
 const userSchema = new mongoose.Schema(
@@ -20,18 +16,13 @@ const userSchema = new mongoose.Schema(
 			unique: true,
 			trim: true,
 		},
-		password: {
-			type: String,
-		},
 		posts: [
 			{
 				type: mongoose.Schema.Types.ObjectId,
-				ref: 'Post', // Or change to `type: String` if you store raw content
+				ref: 'Post',
 			},
 		],
-		profileimage: {
-			type: String,
-		},
+		profileimage: String,
 		email: {
 			type: String,
 			required: true,
@@ -49,9 +40,7 @@ const userSchema = new mongoose.Schema(
 			trim: true,
 		},
 	},
-	{
-		timestamps: true, // adds createdAt and updatedAt automatically
-	},
+	{ timestamps: true },
 );
 
 userSchema.plugin(plm);

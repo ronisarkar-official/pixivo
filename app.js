@@ -10,15 +10,14 @@ var usersRouter = require('./routes/users');
 const expresSession = require('express-session');
 const passport = require('passport');
 const flash = require('connect-flash');
-const mongoose = require('mongoose');
+
 var app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-const DB_URL = process.env.MONGO_URI;
-mongoose.connect(DB_URL);
+
 
 app.use(flash());
 

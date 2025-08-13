@@ -1,5 +1,6 @@
-const plm = require('passport-local-mongoose');
 require('dotenv').config();
+const plm = require('passport-local-mongoose');
+
 const mongoose = require('mongoose');
 
 mongoose

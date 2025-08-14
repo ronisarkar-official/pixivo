@@ -1,4 +1,5 @@
 // routes.js
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
@@ -8,7 +9,8 @@ const LocalStrategy = require('passport-local').Strategy;
 
 const userModel = require('./users');
 const postModel = require('./posts');
-const upload = require('./multer');
+const cloudinary = require('cloudinary').v2;
+const { upload, handleUploadErrors } = require('./multer');
 
 // ===== Passport Config =====
 passport.use(new LocalStrategy(userModel.authenticate()));
@@ -61,18 +63,32 @@ router.get('/allpins', isLoggedIn, async (req, res) => {
 	res.render('pins', { user });
 });
 
-// File Uploads
 router.post(
 	'/fileupload',
 	isLoggedIn,
-	upload.single('image'),
+	upload.single('image'), // This stays the same
 	async (req, res) => {
-		const user = await userModel.findOne({
-			username: req.session.passport.user,
-		});
-		user.profileimage = req.file.filename;
-		await user.save();
-		res.redirect('/profile');
+		try {
+			const user = await userModel.findOne({
+				username: req.session.passport.user,
+			});
+
+			// Cloudinary provides different properties in req.file
+			user.profileimage = req.file.path; // Use path instead of filename
+			// OR store the entire Cloudinary object if you need more flexibility:
+			// user.profileimage = {
+			//   url: req.file.path,
+			//   publicId: req.file.filename,
+			//   secureUrl: req.file.secure_url
+			// };
+
+			await user.save();
+			res.redirect('/profile');
+		} catch (err) {
+			console.error('Upload error:', err);
+			req.flash('error', 'Failed to upload image');
+			res.redirect('/profile');
+		}
 	},
 );
 
@@ -82,7 +98,7 @@ router.post('/upload', isLoggedIn, upload.single('file'), async (req, res) => {
 	try {
 		const user = await userModel.findOne({ username: req.user.username });
 		const post = await postModel.create({
-			image: req.file.filename,
+			image: req.file.path, // Store just the URL string
 			imageTitle: req.body.filetitle,
 			imageDesc: req.body.filecaption,
 			user: user._id,
@@ -94,9 +110,16 @@ router.post('/upload', isLoggedIn, upload.single('file'), async (req, res) => {
 		res.redirect('/profile');
 	} catch (err) {
 		console.error('Upload failed:', err);
-		res.status(500).send('Upload failed');
+		if (req.file) {
+			await cloudinary.uploader
+				.destroy(req.file.filename)
+				.catch((cleanupErr) => console.error('Cleanup failed:', cleanupErr));
+		}
+		req.flash('error', 'Failed to upload post');
+		res.redirect('/upload');
 	}
 });
+
 
 // Register
 router.post('/register', authLimiter, async (req, res) => {

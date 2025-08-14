@@ -8,7 +8,6 @@ mongoose
 	.then(() => console.log('✅ MongoDB Connected'))
 	.catch((err) => console.error('❌', err));
 
-
 const userSchema = new mongoose.Schema(
 	{
 		username: {
@@ -23,7 +22,9 @@ const userSchema = new mongoose.Schema(
 				ref: 'Post',
 			},
 		],
-		profileimage: String,
+		profileimage: {
+			type: String,
+		},
 		email: {
 			type: String,
 			required: true,

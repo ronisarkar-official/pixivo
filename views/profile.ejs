@@ -19,7 +19,7 @@
 		<div
 			class="w-32 h-32 rounded-full border-4 border-zinc-900 shadow-lg overflow-hidden">
 			<img
-				src="/images/uploads/<%= user.profileimage || 'defaultpic.jpg' %>"
+				src="<%= user.profileimage || 'defaultpic.jpg' %>"
 				alt="Avatar"
 				class="w-full h-full object-cover"
 				loading="lazy" />
@@ -124,7 +124,7 @@
 			<div class="rounded-lg overflow-hidden">
 				<img
 					class="w-full h-48 object-cover"
-					src="/images/uploads/<%= user.posts?.[0]?.image || 'defaultpic.jpg' %>"
+					src="<%= user.posts?.[0]?.image || 'defaultpic.jpg' %>"
 					alt="<%= user.posts?.[0]?.imageTitle || 'Pin Image' %>"
 					loading="lazy" />
 			</div>

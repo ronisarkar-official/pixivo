@@ -4,12 +4,41 @@ p.date || p.timestamp || p.time || 0).getTime(); safePosts.sort((a,b) =>
 getDate(b) - getDate(a)); %>
 
 
+<!-- Search Form -->
+<div class="mb-8">
+  <div class="flex justify-center mt-4">
+  <form 
+    action="/feed" 
+    method="GET" 
+    class="flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 w-full max-w-lg shadow-sm hover:shadow-md transition"
+  >
+    <i class="ri-search-line text-white/70 text-lg"></i>
+    <input 
+      type="text" 
+      name="q" 
+      value="<%= typeof q !== 'undefined' ? q : '' %>" 
+      placeholder="Search pins..."
+      class="flex-1 px-3 bg-transparent text-white placeholder-white/50 focus:outline-none"
+    >
+  </form>
+</div>
+  
+  <!-- Search Results Info -->
+  <% if (q) { %>
+    <p class="mt-2 text-gray-600 text-center">
+      Found <%= total %> <%= total === 1 ? 'result' : 'results' %> for "<%= q %>"
+    </p>
+  <% } %>
+</div>
+
 
 
 <div class="max-w-5xl mx-auto mt-10">
-	<div class="columns-1 sm:columns-2 lg:columns-4 gap-4 space-y-4">
-		<% safePosts.forEach((elem, idx) => { %>
-		<div
+	<div class="columns-1 sm:columns-2 lg:columns-4 gap-4 space-y-4 mt-6">
+  <% if (posts.length > 0) { %>
+    <% safePosts.forEach((elem, idx) => { %>
+      <!-- Your existing pin card -->
+	   <div
 			class="break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300 cursor-pointer"
 			data-image="<%= elem.image %>"
 			data-title="<%= elem.imageTitle %>"
@@ -23,13 +52,34 @@ getDate(b) - getDate(a)); %>
 				alt="<%= elem.imageTitle %>"
 				class="w-full object-cover rounded-2xl"
 				loading="lazy" />
-			<% if (elem.imageDesc) { %>
+			<% if (elem.imageTitle) { %>
 			<div class="p-3 text-sm text-white"><%= elem.imageTitle %></div>
 			<% } %>
 		</div>
-		<% }) %>
-	</div>
+    <% }) %>
+  <% } else { %>
+    <div class="col-span-full text-center py-12">
+      <h3 class="text-xl font-medium text-gray-500">
+        <% if (q) { %>
+          No pins found for "<%= q %>"
+        <% } else { %>
+          No pins available yet
+        <% } %>
+      </h3>
+      <% if (q) { %>
+        <a href="/feed" class="text-blue-500 hover:underline mt-2 inline-block">
+          View all pins
+        </a>
+      <% } %>
+    </div>
+  <% } %>
 </div>
+
+</div>
+
+
+
+
 
 <!-- Pinterest-like Modal -->
 <div

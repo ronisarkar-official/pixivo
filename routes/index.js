@@ -30,10 +30,19 @@ function isLoggedIn(req, res, next) {
 	res.redirect('/login');
 }
 
+function isNotLoggedIn(req, res, next) {
+	if (!req.isAuthenticated()) return next();
+	res.redirect('/feed'); // or '/feed' depending on where you want to redirect them
+}
+
+function escapeRegExp(string = '') {
+	// escape regex special chars to avoid ReDoS & injection-like surprises
+	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 // ===== Routes =====
 
 // Auth Pages
-router.get(['/', '/login'], (req, res) => {
+router.get(['/', '/login'], isNotLoggedIn, (req, res) => {
 	res.render('index', {
 		error: req.flash('error') || '',
 	});
@@ -42,9 +51,29 @@ router.get(['/', '/login'], (req, res) => {
 // Feed Page
 router.get('/feed', isLoggedIn, async (req, res) => {
 	const user = await userModel.findOne({ username: req.user.username });
-	const posts = await postModel.find().populate('user');
-	res.render('feed', { user, posts });
+
+	const q = req.query.q || ''; // search query from ?q=
+	let filter = {};
+
+	if (q) {
+		filter = {
+			$or: [
+				{ imageTitle: new RegExp(q, 'i') },
+				{ imageDesc: new RegExp(q, 'i') },
+			],
+		};
+	}
+
+	const posts = await postModel.find(filter).populate('user');
+
+	res.render('feed', {
+		user,
+		posts,
+		q, // pass q to template
+		total: posts.length, // pass total count
+	});
 });
+
 
 // Profile Page
 router.get('/profile', isLoggedIn, async (req, res) => {
@@ -120,7 +149,6 @@ router.post('/upload', isLoggedIn, upload.single('file'), async (req, res) => {
 	}
 });
 
-
 // Register
 router.post('/register', authLimiter, async (req, res) => {
 	const errors = validationResult(req);
@@ -135,7 +163,7 @@ router.post('/register', authLimiter, async (req, res) => {
 
 		await userModel.register(userData, password);
 
-		passport.authenticate('local')(req, res, () => res.redirect('/profile'));
+		passport.authenticate('local')(req, res, () => res.redirect('/feed'));
 	} catch (err) {
 		console.error('Registration failed:', err);
 		req.flash('error', 'Registration failed. Please try again.');
@@ -148,7 +176,7 @@ router.post(
 	'/login',
 	authLimiter,
 	passport.authenticate('local', {
-		successRedirect: '/profile',
+		successRedirect: '/feed',
 		failureRedirect: '/login',
 		failureFlash: true,
 	}),
@@ -161,5 +189,7 @@ router.get('/logout', (req, res, next) => {
 		res.redirect('/');
 	});
 });
+
+
 
 module.exports = router;

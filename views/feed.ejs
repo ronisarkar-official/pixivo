@@ -3,6 +3,9 @@ posts.slice() : []; const getDate = p => new Date(p.createdAt || p.created_at ||
 p.date || p.timestamp || p.time || 0).getTime(); safePosts.sort((a,b) =>
 getDate(b) - getDate(a)); %>
 
+
+
+
 <div class="max-w-5xl mx-auto mt-10">
 	<div class="columns-1 sm:columns-2 lg:columns-4 gap-4 space-y-4">
 		<% safePosts.forEach((elem, idx) => { %>
@@ -18,7 +21,7 @@ getDate(b) - getDate(a)); %>
 			<img
 				src="<%= elem.image %>"
 				alt="<%= elem.imageTitle %>"
-				class="w-full object-cover rounded-lg"
+				class="w-full object-cover rounded-2xl"
 				loading="lazy" />
 			<% if (elem.imageDesc) { %>
 			<div class="p-3 text-sm text-white"><%= elem.imageTitle %></div>

@@ -3,245 +3,78 @@ posts.slice() : []; const getDate = p => new Date(p.createdAt || p.created_at ||
 p.date || p.timestamp || p.time || 0).getTime(); safePosts.sort((a,b) =>
 getDate(b) - getDate(a)); %>
 
-
 <!-- Search Form -->
-<div class="mb-8">
-  <div class="flex justify-center mt-4">
-  <form 
-    action="/feed" 
-    method="GET" 
-    class="flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 w-full max-w-lg shadow-sm hover:shadow-md transition"
-  >
-    <i class="ri-search-line text-white/70 text-lg"></i>
-    <input 
-      type="text" 
-      name="q" 
-      value="<%= typeof q !== 'undefined' ? q : '' %>" 
-      placeholder="Search pins..."
-      class="flex-1 px-3 bg-transparent text-white placeholder-white/50 focus:outline-none"
-    >
-  </form>
-</div>
-  
-  <!-- Search Results Info -->
-  <% if (q) { %>
-    <p class="mt-2 text-gray-600 text-center">
-      Found <%= total %> <%= total === 1 ? 'result' : 'results' %> for "<%= q %>"
-    </p>
-  <% } %>
+<div class="mb-8 static z-0">
+	<div class="flex justify-center mt-4 static">
+		<form
+			action="/feed"
+			method="GET"
+			class="flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 w-full max-w-lg shadow-sm hover:shadow-md transition">
+			<i class="ri-search-line text-white/70 text-lg"></i>
+			<input
+				type="text"
+				name="q"
+				value="<%= typeof q !== 'undefined' ? q : '' %>"
+				placeholder="Search pins..."
+				class="flex-1 px-3 bg-transparent text-white placeholder-white/50 focus:outline-none" />
+		</form>
+	</div>
+
+	<% if (q) { %>
+	<p class="mt-2 text-gray-400 text-center">
+		Found <%= total %> <%= total === 1 ? 'result' : 'results' %> for "<%= q %>"
+	</p>
+	<% } %>
 </div>
 
-
-
-<div class="max-w-5xl mx-auto mt-10">
-	<div class="columns-1 sm:columns-2 lg:columns-4 gap-4 space-y-4 mt-6">
-  <% if (posts.length > 0) { %>
-    <% safePosts.forEach((elem, idx) => { %>
-      <!-- Your existing pin card -->
-	   <div
-			class="break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300 cursor-pointer"
-			data-image="<%= elem.image %>"
-			data-title="<%= elem.imageTitle %>"
-			data-desc="<%= elem.imageDesc || '' %>"
-			data-index="<%= idx %>"
-			data-author-fullname="<%= (elem.author && elem.author.fullname) || (elem.user && elem.user.fullname) || 'Unknown' %>"
-			data-author-username="<%= (elem.author && elem.author.username) || (elem.user && elem.user.username) || '' %>"
-			data-author-image="<%= (elem.author && elem.author.profileimage) || (elem.user && elem.user.profileimage) || 'defaultpic.jpg' %>">
-			<img
-				src="<%= elem.image %>"
-				alt="<%= elem.imageTitle %>"
-				class="w-full object-cover rounded-2xl"
-				loading="lazy" />
-			<% if (elem.imageTitle) { %>
-			<div class="p-3 text-sm text-white"><%= elem.imageTitle %></div>
+<div class="max-w-5xl mx-auto mt-10 px-4 sm:px-0">
+	<div class="columns-2 gap-4 space-y-4 mt-6 sm:columns-3 lg:columns-4">
+		<% if (posts.length > 0) { %> <% safePosts.forEach((elem, idx) => { %>
+		<!-- Pin card -->
+		<a
+			href="/pin/<%= elem._id %>"
+			class="block break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300">
+			<div
+				class="break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300 cursor-pointer"
+				data-image="<%= elem.image %>"
+				data-title="<%= elem.imageTitle %>"
+				data-desc="<%= elem.imageDesc || '' %>"
+				data-index="<%= idx %>"
+				data-author-fullname="<%= (elem.author && elem.author.fullname) || (elem.user && elem.user.fullname) || 'Unknown' %>"
+				data-author-username="<%= (elem.author && elem.author.username) || (elem.user && elem.user.username) || '' %>"
+				data-author-image="<%= (elem.author && elem.author.profileimage) || (elem.user && elem.user.profileimage) || 'defaultpic.jpg' %>">
+				<img
+					src="<%= elem.image %>"
+					alt="<%= elem.imageTitle %>"
+					class="w-full object-cover rounded-2xl"
+					loading="lazy" />
+				<% if (elem.imageTitle) { %>
+				<div class="p-3 text-sm text-white"><%= elem.imageTitle %></div>
+				<% } %>
+			</div>
+		</a>
+		<% }) %> <% } else { %>
+		<!-- No results message -->
+		<div class="col-span-full text-center py-8 md:py-0 px-4 md:px-0">
+			<h3 class="text-lg md:text-xl font-medium text-gray-500">
+				<% if (q) { %> No pins found for "<%= q %>" <% } else { %> No pins
+				available yet <% } %>
+			</h3>
+			<% if (q) { %>
+			<div class="mt-4 md:mt-3">
+				<a
+					href="/feed"
+					class="text-blue-500 hover:underline inline-block md:mr-[9.5rem]">
+					View all pins
+				</a>
+			</div>
 			<% } %>
 		</div>
-    <% }) %>
-  <% } else { %>
-    <div class="col-span-full text-center py-12">
-      <h3 class="text-xl font-medium text-gray-500">
-        <% if (q) { %>
-          No pins found for "<%= q %>"
-        <% } else { %>
-          No pins available yet
-        <% } %>
-      </h3>
-      <% if (q) { %>
-        <a href="/feed" class="text-blue-500 hover:underline mt-2 inline-block">
-          View all pins
-        </a>
-      <% } %>
-    </div>
-  <% } %>
-</div>
-
-</div>
-
-
-
-
-
-<!-- Pinterest-like Modal -->
-<div
-	id="imageModal"
-	class="fixed inset-0 z-60 hidden">
-	<!-- overlay -->
-	<div
-		id="modalBackdrop"
-		class="absolute inset-0 bg-black/65 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
-
-	<!-- centered modal panel -->
-	<div
-		id="modalPanel"
-		class="relative mx-auto my-10 max-w-6xl w-[95%] lg:w-[90%] opacity-0 scale-95 transform transition-all duration-300 pointer-events-none">
-		<div
-			class="bg-[#0f1720] rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row">
-			<!-- Left: image area -->
-			<div class="relative lg:flex-1 lg:min-w-[60%] p-6 lg:p-8">
-				<!-- floating action buttons on image -->
-				<div
-					class="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-30">
-					<button
-						id="expandBtn"
-						title="Open in new tab"
-						class="w-11 h-11 rounded-full bg-black/50 border border-white/10 text-white flex items-center justify-center hover:bg-black/70 transition">
-						<i class="ri-fullscreen-line text-lg"></i>
-					</button>
-					<button
-						id="rotateBtn"
-						title="Rotate"
-						class="w-11 h-11 rounded-full bg-black/50 border border-white/10 text-white flex items-center justify-center hover:bg-black/70 transition">
-						<i class="ri-refresh-line text-lg"></i>
-					</button>
-				</div>
-
-				<!-- main image container (fixed/responsive) -->
-				<!-- image container: responsive, centered, capped to viewport -->
-				<div
-					id="modalImageWrap"
-					class="rounded-2xl overflow-hidden mx-auto shadow-lg w-full max-w-[820px] max-h-[88vh] flex items-center justify-center">
-					<img
-						id="modalImage"
-						src=""
-						alt=""
-						class="max-w-full max-h-[78vh] w-auto h-auto object-contain transition-transform duration-300" />
-				</div>
-			</div>
-
-			<!-- Right: info panel -->
-			<div class="lg:w-[40%] p-6 md:p-8 flex flex-col gap-4 text-white">
-				<!-- header (author + actions) -->
-				<div class="flex items-center justify-between gap-4">
-					<div class="flex items-center gap-3">
-						<img
-							id="modalAuthorImg"
-							src="/images/uploads/defaultpic.jpg"
-							alt="author"
-							class="w-10 h-10 rounded-full object-cover border border-white/10" />
-						<div>
-							<div
-								id="modalAuthorName"
-								class="font-semibold text-sm"
-								>Unknown</div
-							>
-							<div
-								id="modalAuthorUsername"
-								class="text-xs text-white/70"
-								>@unknown</div
-							>
-						</div>
-					</div>
-
-					<div class="flex items-center gap-2">
-						<button
-							id="followBtn"
-							class="px-3 py-1 text-sm rounded-md border border-white/10 text-white/90 hover:bg-white/5 transition"
-							>Follow</button
-						>
-						<button
-							id="closeModalBtn"
-							title="Close"
-							class="w-9 h-9 rounded-full bg-white/5 text-white flex items-center justify-center hover:bg-white/10 transition">
-							<i class="ri-close-fill text-lg"></i>
-						</button>
-					</div>
-				</div>
-
-				<!-- Title & description -->
-				<div>
-					<h2
-						id="modalTitle"
-						class="text-2xl lg:text-3xl font-extrabold leading-tight"></h2>
-					<p
-						id="modalDesc"
-						class="mt-3 text-sm lg:text-base text-white/85 leading-relaxed"></p>
-				</div>
-
-				<!-- stats and actions row -->
-				<div class="flex items-center justify-between mt-2">
-					<div class="flex items-center gap-4 text-sm text-white/85">
-						<div class="flex items-center gap-2"
-							><i class="ri-heart-line"></i> <span id="likeCount">0</span></div
-						>
-						<div class="flex items-center gap-2"
-							><i class="ri-chat-1-line"></i>
-							<span id="commentCount">0</span></div
-						>
-						<div class="flex items-center gap-2"
-							><i class="ri-share-forward-line"></i> <span>Share</span></div
-						>
-					</div>
-					<div>
-						<button
-							class="px-3 py-1 rounded-md bg-white/5 hover:bg-white/10 text-sm transition"
-							>More</button
-						>
-					</div>
-				</div>
-
-				<!-- little comment box -->
-				<div class="mt-4">
-					<label class="text-xs text-white/70">Add a comment</label>
-					<div class="mt-2 flex items-center gap-2">
-						<input
-							id="commentInput"
-							type="text"
-							placeholder="Add a comment..."
-							class="flex-1 px-4 py-2 rounded-full bg-white/5 border border-white/6 text-sm outline-none focus:ring-2 focus:ring-white/10" />
-						<button
-							id="postComment"
-							class="px-4 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm"
-							>Post</button
-						>
-					</div>
-				</div>
-
-				<!-- thumbnails / related -->
-				<div class="mt-4">
-					<h3 class="text-sm text-white/70 mb-2">More like this</h3>
-
-					<!-- Scrollable container -->
-					<div
-						class="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-transparent">
-						<% posts.slice(0, 20).forEach((p) => { %>
-						<img
-							src="<%= p.image %>"
-							class="w-full h-20 object-cover rounded-md border border-white/8 more-thumb"
-							loading="lazy"
-							data-thumb-image="<%= p.image %>"
-							data-thumb-title="<%= p.imageTitle %>"
-							data-thumb-desc="<%= p.imageDesc || '' %>"
-							data-thumb-author-fullname="<%= (p.author && p.author.fullname) || (p.user && p.user.fullname) || 'Unknown' %>"
-							data-thumb-author-username="<%= (p.author && p.author.username) || (p.user && p.user.username) || '' %>"
-							data-thumb-author-image="/images/uploads/<%= (p.author && p.author.profileimage) || (p.user && p.user.profileimage) || 'defaultpic.jpg' %>"
-							alt="<%= p.imageTitle %>" />
-						<% }) %>
-					</div>
-				</div>
-			</div>
-		</div>
+		<% } %>
 	</div>
 </div>
+
+<!-- Pinterest-like Modal -->
 
 <style>
 	/* show/hide and transitions */
@@ -259,6 +92,6 @@ getDate(b) - getDate(a)); %>
 	}
 </style>
 
-<script src="/javascripts/script.js"></script>
+<!-- <script src="/javascripts/script.js"></script> -->
 
 <% include ./partials/footer.ejs %>

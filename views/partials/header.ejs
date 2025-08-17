@@ -13,9 +13,9 @@
 	</head>
 
 	<body class="bg-zinc-900 text-white font-sans min-h-screen w-full">
-		<header class="antialiased shadow-sm">
+		<header class="antialiased shadow-sm ">
 			<nav
-				class="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 dark:bg-gray-800 dark:border-gray-700">
+				class="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 dark:bg-gray-800 dark:border-gray-700 sticky">
 				<div class="flex justify-between items-center">
 					<!-- Left Section -->
 					<div class="flex items-center gap-3">
@@ -62,7 +62,7 @@
 								<span class="sr-only">Open user menu</span>
 								<img
 									class="w-9 h-9 rounded-full object-cover"
-									src="<%= user.profileimage || 'defaultpic.jpg' %>"
+									src="<%= user.profileimage || '/images/defaultpic.png' %>"
 									alt="User avatar" />
 							</button>
 
@@ -81,7 +81,7 @@
 								<ul class="py-1">
 									<li>
 										<a
-											href="/profile"
+											href="/profile/<%= user.username %>"
 											class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
 											>My Profile</a
 										>
@@ -109,5 +109,4 @@
 				</div>
 			</nav>
 		</header>
-
-		
+	

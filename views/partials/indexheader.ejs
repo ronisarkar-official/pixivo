@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Pinterest Style Auth Modal - Dark Theme</title>
+		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+		<link
+			href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+			rel="stylesheet" />
+		<style>
+			.auth-input {
+				@apply w-full px-4 py-3 border border-gray-700 rounded-full bg-gray-900 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition;
+			}
+			.auth-btn {
+				@apply w-full py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full font-semibold text-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition;
+			}
+			.link {
+				@apply text-red-400 font-medium hover:underline;
+			}
+		</style>
+	</head>
+
+	<body class="bg-black text-gray-200 font-sans">
+		<!-- NAVBAR -->
+		<nav class="bg-gradient-to-r from-gray-950 to-gray-900 shadow fixed w-full z-50 top-0 left-0 border-b border-gray-800">
+			<div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+				<a href="/" class="flex items-center gap-2">
+					<img src="/images/pixivo-logo.png" alt="Pixivo Logo" class="h-10 w-auto" />
+					
+				</a>
+				<div class="space-x-3">
+					<button
+						onclick="openModal('login')"
+						class="px-5 py-2 bg-red-600 text-white rounded-full font-semibold hover:bg-red-700 transition">
+						Login
+					</button>
+					<button
+						onclick="openModal('register')"
+						class="px-5 py-2 bg-gray-800 text-gray-200 border border-gray-700 rounded-full font-semibold hover:bg-gray-700 transition">
+						Register
+					</button>
+				</div>
+			</div>
+		</nav>
+
+		<!-- AUTH MODAL -->
+		<div
+	id="authModal"
+	class="fixed inset-0 flex items-center justify-center bg-black/70 opacity-0 pointer-events-none transition duration-300 z-50 backdrop-blur-md">
+	<div
+		id="modalContent"
+		class="relative bg-gradient-to-b from-gray-900/95 to-gray-950/95 rounded-3xl shadow-2xl w-[420px] p-10 transform scale-90 transition duration-300 border border-gray-800">
+		
+		<!-- Close Button -->
+		<button
+			onclick="closeModal()"
+			class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+			<i class="ri-close-line text-2xl"></i>
+		</button>
+
+		<!-- LOGIN FORM -->
+		<form
+			id="loginForm"
+			action="/login"
+			method="POST"
+			class="space-y-6 animate-fadeIn">
+			
+			<h2 class="text-3xl font-extrabold text-center bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
+				Welcome back
+			</h2>
+			<p class="text-center text-gray-400">Log in to continue</p>
+
+			<% if (error.length > 0) { %>
+			<p class="text-sm text-red-400 bg-red-900/40 border border-red-700 rounded-lg px-4 py-2 shadow-sm">
+				<%= error %>
+			</p>
+			<% } %>
+
+			<!-- Username -->
+			<div class="space-y-2">
+				<label class="text-sm text-gray-300">Username</label>
+				<input
+					type="text"
+					name="username"
+					placeholder="Enter your username"
+					required
+					class="w-full px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200" />
+			</div>
+
+			<!-- Password -->
+			<div class="space-y-2">
+				<label class="text-sm text-gray-300">Password</label>
+				<input
+					type="password"
+					name="password"
+					placeholder="Enter your password"
+					required
+					class="w-full px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200" />
+			</div>
+
+			<div class="flex justify-between items-center text-sm">
+				<a href="/forgot" class="text-blue-400 hover:underline">Forgot password?</a>
+			</div>
+
+			<!-- Button -->
+			<button
+				type="submit"
+				class="w-full py-3 rounded-xl font-semibold text-lg bg-gradient-to-r from-red-600 to-pink-600 text-white shadow-lg hover:shadow-red-600/40 hover:scale-[1.02] transition duration-200">
+				Login
+			</button>
+
+			<p class="text-sm text-gray-400 text-center">
+				Don’t have an account?
+				<button type="button" onclick="switchForm('register')" class="text-red-400 hover:underline">Sign up</button>
+			</p>
+		</form>
+
+		<!-- REGISTER FORM -->
+		<form
+			id="registerForm"
+			action="/register"
+			method="POST"
+			class="hidden space-y-6 animate-fadeIn">
+			
+			<h2 class="text-3xl font-extrabold text-center bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
+				Join Pinterest
+			</h2>
+			<p class="text-center text-gray-400">Find new ideas to try</p>
+
+			<% if (error && error.length > 0) { %>
+			<p class="text-sm text-red-400 bg-red-900/40 border border-red-700 rounded-lg px-4 py-2 shadow-sm">
+				<%= error %>
+			</p>
+			<% } %>
+
+			<!-- Full Name -->
+			<div class="space-y-2">
+				<label class="text-sm text-gray-300">Full Name</label>
+				<input
+					type="text"
+					name="fullname"
+					placeholder="Enter your name"
+					required
+					class="w-full px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200" />
+			</div>
+
+			<!-- Email -->
+			<div class="space-y-2">
+				<label class="text-sm text-gray-300">Email</label>
+				<input
+					type="email"
+					name="email"
+					placeholder="Enter your email"
+					required
+					class="w-full px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200" />
+			</div>
+
+			<!-- Username -->
+			<div class="space-y-2">
+				<label class="text-sm text-gray-300">Username</label>
+				<input
+					type="text"
+					name="username"
+					placeholder="Choose a username"
+					class="w-full px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200" />
+			</div>
+
+			<!-- Password -->
+			<div class="space-y-2">
+				<label class="text-sm text-gray-300">Password</label>
+				<input
+					type="password"
+					name="password"
+					placeholder="Create a password"
+					required
+					class="w-full px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200" />
+			</div>
+
+			<!-- Button -->
+			<button
+				type="submit"
+				class="w-full py-3 rounded-xl font-semibold text-lg bg-gradient-to-r from-red-600 to-pink-600 text-white shadow-lg hover:shadow-pink-600/40 hover:scale-[1.02] transition duration-200">
+				Sign Up
+			</button>
+
+			<p class="text-sm text-gray-400 text-center">
+				Already have an account?
+				<button type="button" onclick="switchForm('login')" class="text-red-400 hover:underline">Log in</button>
+			</p>
+		</form>
+	</div>
+</div>
+
+<style>
+	@keyframes fadeIn {
+		from { opacity: 0; transform: translateY(10px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+	.animate-fadeIn {
+		animation: fadeIn 0.4s ease-out;
+	}
+</style>

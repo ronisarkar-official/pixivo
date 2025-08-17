@@ -19,7 +19,7 @@
 		<div
 			class="w-32 h-32 rounded-full border-4 border-zinc-900 shadow-lg overflow-hidden">
 			<img
-				src="<%= user.profileimage || 'defaultpic.jpg' %>"
+				src="<%= user.profileimage || '/images/defaultpic.png' %>"
 				alt="Avatar"
 				class="w-full h-full object-cover"
 				loading="lazy" />
@@ -38,7 +38,6 @@
 	<div class="pt-6 pb-6 flex flex-col items-center text-center">
 		<h1 class="text-2xl font-semibold"><%= user.fullname %></h1>
 		<p class="mt-1 text-gray-400 text-sm">@<%= user.username %></p>
-		
 
 		<!-- Add Post Modal -->
 		<div
@@ -121,7 +120,7 @@
 			<div class="rounded-lg overflow-hidden">
 				<img
 					class="w-full h-48 object-cover"
-					src="<%= user.posts?.[0]?.image || 'defaultpic.jpg' %>"
+					src="<%= user.posts?.[0]?.image || '/images/default-thumbnail.jpg' %>"
 					alt="<%= user.posts?.[0]?.imageTitle || 'Pin Image' %>"
 					loading="lazy" />
 			</div>

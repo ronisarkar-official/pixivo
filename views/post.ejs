@@ -1,0 +1,458 @@
+<%- include("partials/header.ejs") %> <% const author = post && post.user ?
+post.user : {}; const relAll = Array.isArray(posts) ? posts : []; const related
+= relAll.filter(p => String(p._id) !== String(post._id)).slice(0, 12); const
+imgUrl = post?.image || "/images/placeholder.png"; const imgAlt =
+post?.imageTitle || "Post image"; const title = post?.imageTitle || "Untitled";
+const desc = post?.imageDesc || ""; const likes = Array.isArray(post?.likes) ?
+post.likes.length : 0; const commentsCount = Array.isArray(post?.comments) ?
+post.comments.length : 0; const authorImg = author?.profileimage ||
+"/images/defaultpic.png"; const authorName = author?.fullname || "Unknown";
+const authorUsername = author?.username || "unknown"; const createdAt =
+post?.createdAt ? new Date(post.createdAt) : null; %>
+
+<!-- Page wrapper -->
+<main
+	class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-white"
+	data-post-id="<%= post._id %>">
+	<!-- Top actions -->
+	<div class="mb-4 flex items-center justify-between gap-3 z-0">
+		<a
+			href="javascript:history.back()"
+			class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5 transition"
+			aria-label="Go back">
+			<i class="ri-arrow-left-line"></i><span>Back</span>
+		</a>
+
+		<!-- prettier action group -->
+		<div class="static  flex items-center gap-3">
+			<!-- Share (primary) -->
+			<div class="static">
+				<button
+					id="shareBtn"
+					class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus:outline-none focus:ring-2 focus:ring-white/10"
+					aria-haspopup="menu"
+					aria-expanded="false"
+					aria-label="Share post">
+					<i
+						class="ri-share-forward-line text-lg"
+						aria-hidden="true"></i>
+					<span class="hidden sm:inline">Share</span>
+				</button>
+
+				<!-- small desktop menu (hidden on small screens) -->
+				<div
+					id="shareMenu"
+					class="hidden absolute right-0 mt-2 w-44 rounded-lg bg-[#0b1220] border border-white/10 shadow-2xl py-1">
+					<button
+						data-action="native"
+						class="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition">
+						Share via device
+					</button>
+					<button
+						data-action="copy"
+						class="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition">
+						Copy link
+					</button>
+					<a
+						href="<%= imgUrl %>"
+						target="_blank"
+						rel="noopener"
+						class="block px-3 py-2 text-sm hover:bg-white/5 transition">
+						Open image
+					</a>
+				</div>
+			</div>
+
+			<!-- Open (direct) -->
+			<a
+				href="<%= imgUrl %>"
+				target="_blank"
+				rel="noopener"
+				class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus:outline-none focus:ring-2 focus:ring-white/10">
+				<i
+					class="ri-external-link-line text-lg"
+					aria-hidden="true"></i>
+				<span class="hidden sm:inline">Open</span>
+			</a>
+
+			<!-- Download -->
+			<a
+				href="<%= imgUrl %>"
+				download
+				class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/6 text-sm border border-white/8 hover:bg-white/8 transition focus:outline-none focus:ring-2 focus:ring-white/12">
+				<i
+					class="ri-download-2-line text-lg"
+					aria-hidden="true"></i>
+				<span class="hidden sm:inline">Download</span>
+			</a>
+		</div>
+	</div>
+
+	<!-- 2-col responsive layout -->
+	<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+		<!-- Left: Image -->
+		<section class="lg:col-span-7">
+			<div
+				id="modalImageWrap"
+				class="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 flex items-center justify-center min-h-fit max-h-[50vh] bg-gradient-to-b from-white/3 to-transparent">
+				<!-- Floating controls -->
+
+				<!-- Image container preserves aspect-ratio and allows smooth transform -->
+				<div
+					id="imageFrame"
+					class="w-full h-fit lg:h-full flex items-center justify-center p-4 z-[-1]">
+					<img
+						id="modalImage"
+						src="<%= imgUrl %>"
+						alt="<%= imgAlt %>"
+						fetchpriority="high"
+						decoding="async"
+						loading="eager"
+						class="max-w-full max-h-[80vh] w-auto h-auto object-contain transition-transform duration-300 will-change-transform rounded-lg" />
+				</div>
+			</div>
+			%>
+		</section>
+
+		<!-- Right: Info Panel -->
+		<aside class="lg:col-span-5 flex flex-col">
+			<!-- Author header (sticky on large screens) -->
+			<header
+				class="rounded-2xl border border-white/10 bg-[#0f1720] p-4 lg:top-20">
+				<div class="flex items-center justify-between gap-4">
+					<div class="flex items-center gap-3">
+						<img
+							src="<%= authorImg %>"
+							alt="Author avatar"
+							class="w-12 h-12 rounded-full object-cover border border-white/10" />
+						<div>
+							<div class="font-semibold text-sm leading-tight"
+								><%= authorName %></div
+							>
+							<div class="text-xs text-white/70 leading-tight"
+								>@<%= authorUsername %></div
+							>
+						</div>
+					</div>
+					<button
+						id="followBtn"
+						class="px-3 py-1.5 text-sm rounded-md border border-white/10 text-white/90 hover:bg-white/5 transition">
+						Follow
+					</button>
+				</div>
+			</header>
+
+			<!-- Body -->
+			<div
+				class="mt-4 rounded-2xl border border-white/10 bg-[#0f1720] p-4 space-y-6">
+				<!-- Title & description -->
+				<div>
+					<h1 class="text-xl lg:text-2xl font-extrabold leading-tight"
+						><%= title %></h1
+					>
+					<% if (desc) { %>
+					<p class="mt-2 text-sm lg:text-base text-white/85 leading-relaxed"
+						><%= desc %></p
+					>
+					<% } %>
+				</div>
+
+				<!-- Stats / Actions -->
+				<div
+					class="flex items-center justify-between rounded-xl text-white/85 text-sm">
+					<div class="flex items-center gap-5">
+						<button
+							id="likeBtn"
+							class="group inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition"
+							aria-pressed="false">
+							<i
+								class="ri-heart-line group-aria-[pressed=true]:hidden"
+								aria-hidden></i>
+							<i
+								class="ri-heart-fill hidden group-aria-[pressed=true]:inline"
+								aria-hidden></i>
+							<span id="likeCount"><%= likes %></span>
+						</button>
+
+						<a
+							href="#commentInput"
+							class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition">
+							<i
+								class="ri-chat-1-line"
+								aria-hidden></i>
+							<span id="commentCount"><%= commentsCount %></span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Comment input -->
+				<div>
+					<label
+						for="commentInput"
+						class="text-xs text-white/70"
+						>Add a comment</label
+					>
+					<div class="mt-2 flex items-center gap-2">
+						<input
+							id="commentInput"
+							type="text"
+							placeholder="Add a comment…"
+							class="flex-1 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm outline-none focus:ring-2 focus:ring-white/10" />
+						<button
+							id="postComment"
+							class="px-4 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm"
+							>Post</button
+						>
+					</div>
+					<!-- Optional: live comment list container -->
+					<ul
+						id="commentList"
+						class="mt-3 space-y-2 text-sm"></ul>
+				</div>
+			</div>
+		</aside>
+	</div>
+	<!-- end of 2-col responsive layout -->
+
+	<!-- Big "More like this" masonry-style grid -->
+	<div
+		id="relatedGrid"
+		class="masonry-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 mt-4"
+		style="grid-auto-rows: 12px">
+		<% related.forEach((p, idx) => { %>
+		<a
+			href="/pin/<%= p._id %>"
+			class="masonry-item block rounded-2xl overflow-hidden border border-white/10 group bg-black/10"
+			data-id="<%= p._id %>">
+			<div class="aspect-w-4 aspect-h-3 bg-white/5 w-full h-full">
+				<img
+					data-src="<%= p.image %>"
+					src="<%= p.image %>"
+					alt="<%= p.imageTitle || 'Related image' %>"
+					loading="lazy"
+					decoding="async"
+					referrerpolicy="no-referrer"
+					class="w-full h-full object-cover transition-transform group-hover:scale-105 will-change-transform" />
+			</div>
+			<% if (p.imageTitle) { %>
+			<div class="mt-3 text-sm text-white/80 font-medium truncate px-2">
+				<%= p.imageTitle %>
+			</div>
+			<% } %>
+		</a>
+		<% }) %>
+	</div>
+</main>
+
+<!-- Tiny toast -->
+<div
+	id="toast"
+	class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden px-3 py-2 rounded-full text-sm bg-black/80 border border-white/10"></div>
+
+<style>
+	/* small helper for responsive masonry: grid-auto-rows is small (8px) and JS will set row-span */
+	.masonry-grid {
+		grid-auto-rows: 8px;
+	}
+	.masonry-item img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	/* better focus outline */
+	a:focus,
+	button:focus {
+		outline: 3px solid rgba(255, 255, 255, 0.08);
+		outline-offset: 2px;
+	}
+	/* imageFrame center & pinch-friendly */
+	#imageFrame {
+		touch-action: pan-y pinch-zoom;
+	}
+	@media (min-width: 1024px) {
+		/* on large screens reduce gaps and improve layout */
+		.masonry-grid {
+			gap: 12px;
+		}
+	}
+</style>
+
+<script>
+	(() => {
+		const $ = (sel, root = document) => root.querySelector(sel);
+		const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+		const toast = (msg) => {
+			const el = document.getElementById('toast');
+			if (!el) return;
+			el.textContent = msg;
+			el.classList.remove('hidden');
+			clearTimeout(el._t);
+			el._t = setTimeout(() => el.classList.add('hidden'), 1600);
+		};
+
+		const wrap = document.getElementById('modalImageWrap');
+		const img = document.getElementById('modalImage');
+
+		const likeBtn = document.getElementById('likeBtn');
+		const likeCount = document.getElementById('likeCount');
+		const shareBtn = document.getElementById('shareBtn');
+		const postId = document
+			.querySelector('main[data-post-id]')
+			?.getAttribute('data-post-id');
+
+		// Smooth zoom and rotate state
+
+		// basic pinch zoom detection for touch (two-finger distance)
+		(function attachPinch() {
+			let startDist = null;
+			function dist(t) {
+				const dx = t[0].pageX - t[1].pageX;
+				const dy = t[0].pageY - t[1].pageY;
+				return Math.hypot(dx, dy);
+			}
+			img?.addEventListener(
+				'touchstart',
+				(e) => {
+					if (e.touches.length === 2) startDist = dist(e.touches);
+				},
+				{ passive: true },
+			);
+			img?.addEventListener(
+				'touchmove',
+				(e) => {
+					if (e.touches.length === 2 && startDist) {
+						const d = dist(e.touches);
+						const ratio = d / startDist;
+						img.style.transform = `scale(${Math.min(
+							3,
+							Math.max(1, ratio),
+						)}) rotate(${rotation}deg)`;
+					}
+				},
+				{ passive: true },
+			);
+			img?.addEventListener(
+				'touchend',
+				(e) => {
+					startDist = null;
+					applyTransform();
+				},
+				{ passive: true },
+			);
+		})();
+
+		// Like (progressive enhancement)
+		likeBtn?.addEventListener('click', async () => {
+			const pressed = likeBtn.getAttribute('aria-pressed') === 'true';
+			likeBtn.setAttribute('aria-pressed', String(!pressed));
+			const delta = pressed ? -1 : 1;
+			likeCount.textContent = Math.max(
+				0,
+				(+likeCount.textContent || 0) + delta,
+			);
+			try {
+				const res = await fetch(`/posts/${postId}/like`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+				});
+				if (!res.ok) throw new Error();
+			} catch {
+				/* ignore; UI already updated */
+			}
+		});
+
+		// Share (Web Share API → Clipboard fallback)
+		shareBtn?.addEventListener('click', async () => {
+			const shareData = {
+				title: document.title || '<%= title %>',
+				text: '<%= title %>',
+				url: window.location.href,
+			};
+			try {
+				if (navigator.share) await navigator.share(shareData);
+				else {
+					await navigator.clipboard.writeText(window.location.href);
+					toast('Link copied');
+				}
+			} catch {
+				await navigator.clipboard.writeText(window.location.href);
+				toast('Link copied');
+			}
+		});
+
+		// Comments (client-only demo)
+		const input = document.getElementById('commentInput');
+		const postButton = document.getElementById('postComment');
+		const list = document.getElementById('commentList');
+		postButton?.addEventListener('click', async () => {
+			const text = (input?.value || '').trim();
+			if (!text) return;
+			try {
+				const res = await fetch(`/posts/${postId}/comments`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ text }),
+				});
+				if (!res.ok) throw new Error();
+			} catch (_) {
+				/* ignore – progressive */
+			}
+
+			const li = document.createElement('li');
+			li.className = 'px-3 py-2 rounded-lg bg-white/5 border border-white/10';
+			li.textContent = text;
+			list?.prepend(li);
+			input.value = '';
+			const cc = document.getElementById('commentCount');
+			if (cc) cc.textContent = String((+cc.textContent || 0) + 1);
+		});
+
+		// Keyboard shortcuts
+		window.addEventListener('keydown', (e) => {
+			if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName))
+				return;
+			if (e.key === 'l' || e.key === 'L') likeBtn?.click();
+			if (e.key === 'c' || e.key === 'C') input?.focus();
+			if (e.key === 'z' || e.key === 'Z') zoomBtn?.click();
+			if (e.key === 'r' || e.key === 'R') rotateBtn?.click();
+		});
+
+		// ===== Masonry: compute row spans based on image aspect ratio =====
+		function calculateSpans() {
+			const grid = document.getElementById('relatedGrid');
+			if (!grid) return;
+			const rowHeight =
+				parseInt(getComputedStyle(grid).getPropertyValue('grid-auto-rows')) ||
+				8;
+			const gap = parseInt(getComputedStyle(grid).getPropertyValue('gap')) || 8;
+			const items = grid.querySelectorAll('.masonry-item');
+			items.forEach((item) => {
+				const img = item.querySelector('img');
+				if (!img) return;
+				const h = img.naturalHeight || img.height;
+				const w = img.naturalWidth || img.width;
+				const rowSpan = Math.ceil(
+					((h / w) * item.offsetWidth + gap) / (rowHeight + gap),
+				);
+				item.style.gridRowEnd = `span ${Math.max(2, rowSpan)}`;
+			});
+		}
+
+		// Recalculate after images load & on resize
+		window.addEventListener('load', () => {
+			calculateSpans();
+		});
+		window.addEventListener('resize', () => {
+			calculateSpans();
+		});
+
+		// Also recalc per image when it finishes loading
+		document.querySelectorAll('#relatedGrid img').forEach((img) => {
+			if (img.complete) return; // if already loaded, skip
+			img.addEventListener('load', () => calculateSpans());
+		});
+	})();
+</script>
+
+<%- include("partials/footer.ejs") %>

@@ -1,0 +1,51 @@
+</div>
+
+		<script>
+			const modal = document.getElementById('authModal');
+			const modalContent = document.getElementById('modalContent');
+			const loginForm = document.getElementById('loginForm');
+			const registerForm = document.getElementById('registerForm');
+
+			function openModal(type) {
+				modal.classList.remove('pointer-events-none', 'opacity-0');
+				modal.classList.add('opacity-100');
+				modalContent.classList.remove('scale-90');
+				modalContent.classList.add('scale-100');
+				if (type === 'login') {
+					showLogin();
+				} else {
+					showRegister();
+				}
+			}
+
+			function closeModal() {
+				modal.classList.add('pointer-events-none', 'opacity-0');
+				modal.classList.remove('opacity-100');
+				modalContent.classList.add('scale-90');
+				modalContent.classList.remove('scale-100');
+			}
+
+			modal.addEventListener('click', (e) => {
+				if (e.target === modal) closeModal();
+			});
+
+			function switchForm(type) {
+				if (type === 'login') {
+					showLogin();
+				} else {
+					showRegister();
+				}
+			}
+
+			function showLogin() {
+				loginForm.classList.remove('hidden');
+				registerForm.classList.add('hidden');
+			}
+
+			function showRegister() {
+				registerForm.classList.remove('hidden');
+				loginForm.classList.add('hidden');
+			}
+		</script>
+	</body>
+</html>

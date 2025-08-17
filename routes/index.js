@@ -75,14 +75,53 @@ router.get('/feed', isLoggedIn, async (req, res) => {
 });
 
 
-// Profile Page
-router.get('/profile', isLoggedIn, async (req, res) => {
-	const user = await userModel
-		.findOne({ username: req.user.username })
-		.populate('posts');
 
-	res.render('profile', { user });
+// Single Post Page
+router.get('/pin/:id', isLoggedIn, async (req, res) => {
+	try {
+		const postId = req.params.id;
+
+		// Populate user details
+		const post = await postModel
+			.findById(postId)
+			.populate('user', 'username fullname profileimage');
+
+		if (!post) return res.status(404).send('Post not found');
+
+		// Logged-in user (for header)
+		const user = await userModel.findOne({ username: req.user.username });
+
+		// Related posts for "More like this"
+		const posts = await postModel.find().limit(20);
+
+		res.render('post', { user, post, posts });
+	} catch (err) {
+		console.error('Error fetching post:', err);
+		res.status(500).send('Server error');
+	}
 });
+
+
+
+
+
+// Profile Page
+router.get('/profile/:username', isLoggedIn, async (req, res) => {
+	try {
+		const username = req.params.username; // get username from URL
+		const user = await userModel.findOne({ username }).populate('posts');
+
+		if (!user) {
+			return res.status(404).send('User not found');
+		}
+
+		res.render('profile', { user });
+	} catch (err) {
+		console.error(err);
+		res.status(500).send('Server error');
+	}
+});
+
 
 router.get('/allpins', isLoggedIn, async (req, res) => {
 	const user = await userModel

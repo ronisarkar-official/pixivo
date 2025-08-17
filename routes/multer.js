@@ -14,27 +14,23 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
 	cloudinary: cloudinary,
 	params: {
-		folder: 'profilePic', // Optional - folder in Cloudinary
-		public_id: (req, file) => {
-			// Generate unique filename similar to your current setup
-			const uniqueFilename =
-				'uuid-' + Date.now() + '-' + Math.round(Math.random() * 1e9);
-			return uniqueFilename;
+		// removed folder → no /profilePic/ in URL
+		public_id: () => {
+			// Generate short ID (6 chars)
+			return Math.random().toString(36).substring(2, 8);
 		},
-		allowed_formats: ['jpg', 'png', 'jpeg', 'gif'], // Allowed file formats
-		transformation: [{ width: 800, height: 800, crop: 'limit' }], // Optional transformations
+		allowed_formats: ['jpg', 'png', 'jpeg', 'gif'],
+		transformation: [{ width: 800, height: 800, crop: 'limit' }],
 	},
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// Error handling middleware (optional but recommended)
+// Error handling middleware
 const handleUploadErrors = (err, req, res, next) => {
 	if (err instanceof multer.MulterError) {
-		// A Multer error occurred when uploading
 		return res.status(400).json({ error: err.message });
 	} else if (err) {
-		// An unknown error occurred
 		return res.status(500).json({ error: err.message });
 	}
 	next();

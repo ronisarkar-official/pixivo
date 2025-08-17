@@ -62,7 +62,7 @@
 								<span class="sr-only">Open user menu</span>
 								<img
 									class="w-9 h-9 rounded-full object-cover"
-									src="<%= user.profileimage || '/images/defaultpic.png' %>"
+									src="<%= (user && user.profileimage) ? user.profileimage : '/images/defaultpic.png' %>"
 									alt="User avatar" />
 							</button>
 
@@ -71,10 +71,10 @@
 								id="dropdown"
 								class="hidden absolute right-0 mt-2 w-56 bg-[#1e2939]  rounded-lg shadow-lg divide-y divide-gray-100 dark:bg-gray-700 dark:divide-gray-600 z-50">
 								<div class="px-4 py-3">
-									<p class="text-sm font-semibold text-gray-900 dark:text-white"
+									<p class="text-sm font-semibold text-white dark:text-white"
 										><%= user.fullname %></p
 									>
-									<p class="text-sm text-gray-500 truncate dark:text-gray-400"
+									<p class="text-sm text-white truncate dark:text-gray-400"
 										><%= user.email %></p
 									>
 								</div>
@@ -82,14 +82,14 @@
 									<li>
 										<a
 											href="/profile/<%= user.username %>"
-											class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+											class="block px-4 py-2 text-sm text-white hover:bg-gray-100 dark:hover:bg-gray-600"
 											>My Profile</a
 										>
 									</li>
 									<li>
 										<a
 											href="#"
-											class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+											class="block px-4 py-2 text-sm text-white hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
 											>Account Settings</a
 										>
 									</li>

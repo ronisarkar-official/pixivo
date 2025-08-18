@@ -267,7 +267,7 @@ post._id ? post._id : ''; %>
 
 						<!-- Title below image -->
 						<% if (p.imageTitle) { %>
-						<div class="mt-2 text-sm text-white/80 font-medium truncate px-2">
+						<div class=" text-xs text-white/80 font-medium truncate px-2">
 							<%= p.imageTitle %>
 						</div>
 						<% } %>
@@ -280,7 +280,7 @@ post._id ? post._id : ''; %>
 		</section>
 
 		<!-- Right: Info Panel -->
-		<aside class="lg:col-span-5 flex flex-col gap-4">
+		<aside class="lg:col-span-5 flex flex-col gap-6">
 			<!-- sticky header on large screens -->
 			<% function shuffleArray(arr) { const a = Array.isArray(arr) ? arr.slice()
 			: []; for (let i = a.length - 1; i > 0; i--) { const j =
@@ -290,14 +290,14 @@ post._id ? post._id : ''; %>
 			<section class="w-full p-1">
 				<div
 					id="relatedGridAside"
-					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
+					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8 mb-4">
 					<% shuffledRelated.forEach((p) => { %>
 					<a
 						href="/pin/<%= p._id %>"
-						class="masonry-item block"
+						class="masonry-item block "
 						data-id="<%= p._id %>">
 						<!-- Fully rounded image -->
-						<div class="thumb w-full h-28 overflow-hidden gap-2">
+						<div class="thumb w-full h-28 overflow-hidden gap-2  ">
 							<img
 								src="<%= p.image %>"
 								alt="<%= p.imageTitle || 'Related image' %>"
@@ -309,7 +309,7 @@ post._id ? post._id : ''; %>
 
 						<!-- Title below image -->
 						<% if (p.imageTitle) { %>
-						<div class="mt-2 text-sm text-white/80 font-medium truncate px-2">
+						<div class=" text-xs text-white/80 font-medium truncate px-2 ">
 							<%= p.imageTitle %>
 						</div>
 						<% } %>

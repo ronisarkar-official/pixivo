@@ -1,7 +1,10 @@
-<% include ./partials/header.ejs %> <% const safePosts = Array.isArray(posts) ?
-posts.slice() : []; const getDate = p => new Date(p.createdAt || p.created_at ||
-p.date || p.timestamp || p.time || 0).getTime(); safePosts.sort((a,b) =>
-getDate(b) - getDate(a)); %>
+<% include ./partials/header.ejs %> 
+<% 
+// clone posts safely
+const safePosts = Array.isArray(posts) ? posts.slice() : []; 
+// shuffle posts randomly for each page load
+safePosts.sort(() => Math.random() - 0.5); 
+%>
 
 <!-- Search Form -->
 <div class="mb-8 static z-0">
@@ -73,6 +76,7 @@ getDate(b) - getDate(a)); %>
 		<% } %>
 	</div>
 </div>
+
 
 <!-- Pinterest-like Modal -->
 

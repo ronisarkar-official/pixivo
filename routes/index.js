@@ -27,7 +27,16 @@ const authLimiter = rateLimit({
 // ===== Middleware =====
 function isLoggedIn(req, res, next) {
 	if (req.isAuthenticated()) return next();
-	res.redirect('/login');
+
+	const isAjax =
+		req.xhr ||
+		req.headers['x-requested-with'] === 'XMLHttpRequest' ||
+		(req.headers.accept &&
+			req.headers.accept.indexOf('application/json') !== -1);
+
+	if (isAjax) return res.status(401).json({ error: 'Not authenticated' });
+
+	return res.redirect('/login');
 }
 
 function isNotLoggedIn(req, res, next) {
@@ -80,18 +89,14 @@ router.get('/feed', isLoggedIn, async (req, res) => {
 router.get('/pin/:id', isLoggedIn, async (req, res) => {
 	try {
 		const postId = req.params.id;
-
-		// Populate user details
 		const post = await postModel
 			.findById(postId)
-			.populate('user', 'username fullname profileimage');
+			.populate('user', 'username fullname profileimage')
+			.populate('comments.user', 'username fullname profileimage'); // <- important
 
 		if (!post) return res.status(404).send('Post not found');
 
-		// Logged-in user (for header)
 		const user = await userModel.findOne({ username: req.user.username });
-
-		// Related posts for "More like this"
 		const posts = await postModel.find().limit(20);
 
 		res.render('post', { user, post, posts });
@@ -103,12 +108,68 @@ router.get('/pin/:id', isLoggedIn, async (req, res) => {
 
 
 
+// Toggle like
+router.post('/posts/:id/like', isLoggedIn, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user._id;
+
+    // use postModel (the model you required at top)
+    const post = await postModel.findById(postId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    const alreadyLiked = post.likes.includes(userId);
+
+    if (alreadyLiked) post.likes.pull(userId);
+    else post.likes.push(userId);
+
+    await post.save();
+
+    res.json({
+      success: true,
+      liked: !alreadyLiked,
+      likesCount: post.likes.length
+    });
+  } catch (err) {
+    console.error('Like route error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+// Add comment to a post
+// Add a comment — POST /posts/:id/comments
+router.post('/posts/:id/comments', isLoggedIn, async (req, res) => {
+  try {
+    const post = await postModel.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    // validate
+    const text = (req.body.text || '').trim();
+    if (!text) return res.status(400).json({ error: 'Comment text required' });
+
+    post.comments.push({ text, user: req.user._id });
+    await post.save();
+
+    // re-populate the last comment's user data
+    const populated = await postModel
+      .findById(post._id)
+      .populate('comments.user', 'username fullname profileimage');
+
+    const newComment = populated.comments[populated.comments.length - 1];
+
+    return res.json({ success: true, comment: newComment });
+  } catch (err) {
+    console.error('Comment error:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
 
 
 // Profile Page
-router.get('/profile/:username', isLoggedIn, async (req, res) => {
+router.get('/profile', isLoggedIn, async (req, res) => {
 	try {
-		const username = req.params.username; // get username from URL
+		const username = req.session.passport.user; // get username from URL
 		const user = await userModel.findOne({ username }).populate('posts');
 
 		if (!user) {

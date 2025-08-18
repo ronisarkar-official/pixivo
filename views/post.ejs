@@ -8,78 +8,83 @@ post.likes.length : 0; const commentsCount = Array.isArray(post?.comments) ?
 post.comments.length : 0; const authorImg = author?.profileimage ||
 "/images/defaultpic.png"; const authorName = author?.fullname || "Unknown";
 const authorUsername = author?.username || "unknown"; const createdAt =
-post?.createdAt ? new Date(post.createdAt) : null; %>
+post?.createdAt ? new Date(post.createdAt) : null; const safePostId = post &&
+post._id ? post._id : ''; %>
 
 <!-- Page wrapper -->
 <main
 	class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-white"
-	data-post-id="<%= post._id %>">
+	data-post-id="<%= safePostId %>"
+	data-current-user='<%- (JSON.stringify(user || null) || "null").replace(/</g, "\\u003c") %>'>
 	<!-- Top actions -->
-	<div class="mb-4 flex items-center justify-between gap-3 z-0">
+	<div class="mb-4 flex items-center justify-between gap-3 z-10">
 		<a
 			href="javascript:history.back()"
-			class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5 transition"
+			class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5 transition focus-visible:ring-2 focus-visible:ring-white/20"
 			aria-label="Go back">
-			<i class="ri-arrow-left-line"></i><span>Back</span>
+			<i
+				class="ri-arrow-left-line"
+				aria-hidden="true"></i>
+			<span>Back</span>
 		</a>
 
-		<!-- prettier action group -->
-		<div class="static  flex items-center gap-3">
-			<!-- Share (primary) -->
-			<div class="static">
+		<div class="flex items-center gap-3">
+			<div class="relative">
 				<button
 					id="shareBtn"
-					class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus:outline-none focus:ring-2 focus:ring-white/10"
-					aria-haspopup="menu"
+					aria-haspopup="true"
 					aria-expanded="false"
-					aria-label="Share post">
+					class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus-visible:ring-2 focus-visible:ring-white/20">
 					<i
 						class="ri-share-forward-line text-lg"
 						aria-hidden="true"></i>
 					<span class="hidden sm:inline">Share</span>
 				</button>
 
-				<!-- small desktop menu (hidden on small screens) -->
+				<!-- Dropdown for devices without Web Share API (hidden by default) -->
 				<div
 					id="shareMenu"
-					class="hidden absolute right-0 mt-2 w-44 rounded-lg bg-[#0b1220] border border-white/10 shadow-2xl py-1">
+					class="hidden absolute right-0 mt-2 w-44 rounded-lg bg-[#0b1220] border border-white/10 shadow-2xl py-1 z-20"
+					role="menu"
+					aria-label="Share menu">
 					<button
 						data-action="native"
-						class="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition">
-						Share via device
-					</button>
+						class="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition"
+						role="menuitem"
+						>Share via device</button
+					>
 					<button
 						data-action="copy"
-						class="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition">
-						Copy link
-					</button>
+						class="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition"
+						role="menuitem"
+						>Copy link</button
+					>
 					<a
 						href="<%= imgUrl %>"
 						target="_blank"
 						rel="noopener"
-						class="block px-3 py-2 text-sm hover:bg-white/5 transition">
-						Open image
-					</a>
+						class="block px-3 py-2 text-sm hover:bg-white/5 transition"
+						role="menuitem"
+						>Open image</a
+					>
 				</div>
 			</div>
 
-			<!-- Open (direct) -->
 			<a
 				href="<%= imgUrl %>"
 				target="_blank"
 				rel="noopener"
-				class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus:outline-none focus:ring-2 focus:ring-white/10">
+				class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus-visible:ring-2 focus-visible:ring-white/20">
 				<i
 					class="ri-external-link-line text-lg"
 					aria-hidden="true"></i>
 				<span class="hidden sm:inline">Open</span>
 			</a>
 
-			<!-- Download -->
 			<a
 				href="<%= imgUrl %>"
 				download
-				class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/6 text-sm border border-white/8 hover:bg-white/8 transition focus:outline-none focus:ring-2 focus:ring-white/12">
+				class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/6 text-sm border border-white/8 hover:bg-white/8 transition focus-visible:ring-2 focus-visible:ring-white/20">
 				<i
 					class="ri-download-2-line text-lg"
 					aria-hidden="true"></i>
@@ -88,195 +93,483 @@ post?.createdAt ? new Date(post.createdAt) : null; %>
 		</div>
 	</div>
 
-	<!-- 2-col responsive layout -->
+	<!-- Responsive 2-column layout -->
 	<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 		<!-- Left: Image -->
 		<section class="lg:col-span-7">
 			<div
 				id="modalImageWrap"
-				class="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 flex items-center justify-center min-h-fit max-h-[50vh] bg-gradient-to-b from-white/3 to-transparent">
-				<!-- Floating controls -->
-
-				<!-- Image container preserves aspect-ratio and allows smooth transform -->
+				class="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-gradient-to-b from-white/3 to-transparent">
+				<!-- Image frame: uses aspect containment and friendly pinch props -->
 				<div
 					id="imageFrame"
-					class="w-full h-fit lg:h-full flex items-center justify-center p-4 z-[-1]">
+					class="w-full flex items-center justify-center bg-transparent p-4 touch-action-pan-y"
+					style="height: min(70vh, 800px)">
 					<img
 						id="modalImage"
 						src="<%= imgUrl %>"
-						alt="<%= imgAlt %>"
+						alt="<%= imgAlt || title %>"
 						fetchpriority="high"
 						decoding="async"
 						loading="eager"
-						class="max-w-full max-h-[80vh] w-auto h-auto object-contain transition-transform duration-300 will-change-transform rounded-lg" />
+						class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 rounded-lg"
+						tabindex="0" />
 				</div>
 			</div>
-			%>
-		</section>
-
-		<!-- Right: Info Panel -->
-		<aside class="lg:col-span-5 flex flex-col">
-			<!-- Author header (sticky on large screens) -->
-			<header
-				class="rounded-2xl border border-white/10 bg-[#0f1720] p-4 lg:top-20">
-				<div class="flex items-center justify-between gap-4">
-					<div class="flex items-center gap-3">
-						<img
-							src="<%= authorImg %>"
-							alt="Author avatar"
-							class="w-12 h-12 rounded-full object-cover border border-white/10" />
-						<div>
-							<div class="font-semibold text-sm leading-tight"
-								><%= authorName %></div
-							>
-							<div class="text-xs text-white/70 leading-tight"
-								>@<%= authorUsername %></div
-							>
-						</div>
-					</div>
-					<button
-						id="followBtn"
-						class="px-3 py-1.5 text-sm rounded-md border border-white/10 text-white/90 hover:bg-white/5 transition">
-						Follow
-					</button>
-				</div>
-			</header>
 
 			<!-- Body -->
 			<div
-				class="mt-4 rounded-2xl border border-white/10 bg-[#0f1720] p-4 space-y-6">
-				<!-- Title & description -->
-				<div>
-					<h1 class="text-xl lg:text-2xl font-extrabold leading-tight"
-						><%= title %></h1
-					>
+				class="rounded-2xl border border-white/10 bg-[#0f1720] p-4 space-y-6 mt-2">
+				<header class="p-2 lg:top-15 z-30">
+					<div class="flex items-center justify-between gap-4">
+						<div class="flex items-center gap-3">
+							<img
+								src="<%= authorImg %>"
+								alt="Author avatar"
+								class="w-12 h-12 rounded-full object-cover border border-white/10" />
+							<div>
+								<div class="font-semibold text-sm leading-tight"
+									><%= authorName %></div
+								>
+								<div class="text-xs text-white/70 leading-tight"
+									>@<%= authorUsername %></div
+								>
+							</div>
+						</div>
+					</div>
+				</header>
+				<!-- Title & description (desktop) -->
+				<div class="hidden lg:block">
+					<h1 class="text-2xl font-extrabold leading-tight"><%= title %></h1>
 					<% if (desc) { %>
-					<p class="mt-2 text-sm lg:text-base text-white/85 leading-relaxed"
+					<p class="mt-2 text-base text-white/85 leading-relaxed"
 						><%= desc %></p
 					>
 					<% } %>
 				</div>
 
 				<!-- Stats / Actions -->
-				<div
-					class="flex items-center justify-between rounded-xl text-white/85 text-sm">
-					<div class="flex items-center gap-5">
+				<div class="flex items-center justify-between text-white/85 text-sm">
+					<div class="flex items-center gap-3">
 						<button
-							id="likeBtn"
+							id="likeBtn-<%= safePostId %>"
 							class="group inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition"
-							aria-pressed="false">
+							aria-pressed="<%= (user && Array.isArray(post.likes) && post.likes.includes(user._id)) ? 'true' : 'false' %>">
 							<i
-								class="ri-heart-line group-aria-[pressed=true]:hidden"
-								aria-hidden></i>
+								class="ri-heart-line"
+								aria-hidden="true"></i>
 							<i
-								class="ri-heart-fill hidden group-aria-[pressed=true]:inline"
-								aria-hidden></i>
-							<span id="likeCount"><%= likes %></span>
+								class="ri-heart-fill hidden"
+								aria-hidden="true"></i>
+							<span id="likeCount-<%= safePostId %>"><%= likes %></span>
 						</button>
 
 						<a
-							href="#commentInput"
+							href="#commentInput-<%= safePostId %>"
 							class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition">
 							<i
 								class="ri-chat-1-line"
-								aria-hidden></i>
-							<span id="commentCount"><%= commentsCount %></span>
+								aria-hidden="true"></i>
+							<span id="commentCount-<%= safePostId %>"
+								><%= commentsCount %></span
+							>
 						</a>
 					</div>
+
+					<div class="text-xs text-white/60"
+						>Posted <%= createdAt ? createdAt.toLocaleDateString() : new
+						Date(post.createdAt || post.created_at ||
+						Date.now()).toLocaleDateString() %></div
+					>
 				</div>
 
 				<!-- Comment input -->
 				<div>
 					<label
-						for="commentInput"
+						for="commentInput-<%= safePostId %>"
 						class="text-xs text-white/70"
 						>Add a comment</label
 					>
 					<div class="mt-2 flex items-center gap-2">
 						<input
-							id="commentInput"
+							id="commentInput-<%= safePostId %>"
 							type="text"
 							placeholder="Add a comment…"
-							class="flex-1 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm outline-none focus:ring-2 focus:ring-white/10" />
+							class="flex-1 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm outline-none focus:ring-2 focus:ring-white/10"
+							aria-label="Add a comment" />
 						<button
-							id="postComment"
-							class="px-4 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm"
+							id="postComment-<%= safePostId %>"
+							class="cursor-pointer px-4 py-2 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm"
 							>Post</button
 						>
 					</div>
-					<!-- Optional: live comment list container -->
+
 					<ul
-						id="commentList"
-						class="mt-3 space-y-2 text-sm"></ul>
+						id="commentList-<%= safePostId %>"
+						class="mt-3 space-y-2 text-sm">
+						<% (Array.isArray(post.comments) ? post.comments :
+						[]).slice().reverse().forEach(c => { %>
+						<li
+							class="px-3 py-2 rounded-lg bg-white/5 border border-white/10 flex items-start gap-3">
+							<img
+								src="<%= (c.user && c.user.profileimage) ? c.user.profileimage : '/images/defaultpic.png' %>"
+								alt="avatar"
+								class="w-8 h-8 rounded-full object-cover" />
+							<div class="flex-1">
+								<div class="text-sm font-semibold"
+									><%= (c.user && c.user.username) ? c.user.username : 'Unknown'
+									%></div
+								>
+								<div class="text-sm mt-1 break-words"><%= c.text %></div>
+								<div class="text-xs text-white/60 mt-1"
+									><%= c.createdAt ? new Date(c.createdAt).toLocaleString() : ''
+									%></div
+								>
+							</div>
+						</li>
+						<% }) %>
+					</ul>
 				</div>
 			</div>
+
+			<!-- More like this (masonry) -->
+			<section class="mt-6 w-full p-1">
+				<div
+					id="relatedGridMain"
+					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+					<% related.forEach((p) => { %>
+					<a
+						href="/pin/<%= p._id %>"
+						class="masonry-item block rounded-2xl overflow-hidden border border-white/10 group bg-black/10"
+						data-id="<%= p._id %>">
+						<div
+							class="thumb w-full h-44 sm:h-36 md:h-44 lg:h-40 overflow-hidden">
+							<img
+								src="<%= p.image %>"
+								alt="<%= p.imageTitle || 'Related image' %>"
+								loading="lazy"
+								decoding="async"
+								referrerpolicy="no-referrer"
+								class="w-full h-full object-cover block" />
+						</div>
+						<% if (p.imageTitle) { %>
+						<div
+							class="mt-2 text-sm text-white/80 font-medium truncate px-2 pb-2"
+							><%= p.imageTitle %></div
+						>
+						<% } %>
+					</a>
+					<% }) %>
+				</div>
+			</section>
+
+			<!-- caption / meta (mobile) -->
+			<div class="mt-3 lg:hidden">
+				<div class="font-semibold text-base leading-tight"><%= title %></div>
+				<% if (desc) { %>
+				<p class="mt-1 text-sm text-white/80"><%= desc %></p>
+				<% } %>
+			</div>
+		</section>
+
+		<!-- Right: Info Panel -->
+		<aside class="lg:col-span-5 flex flex-col gap-4">
+			<!-- sticky header on large screens -->
+			<% function
+			shuffleArray(arr) { const a = Array.isArray(arr) ? arr.slice() : []; for
+			(let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() *
+			(i + 1)); const tmp = a[i]; a[i] = a[j]; a[j] = tmp; } return a; } const
+			shuffledRelated = shuffleArray(related || []); %>
+
+			<section class="mt-6 w-full p-1">
+				<div
+					id="relatedGridAside"
+					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
+					<% shuffledRelated.forEach((p) => { %>
+					<a
+						href="/pin/<%= p._id %>"
+						class="masonry-item block rounded-2xl overflow-hidden border border-white/10 group bg-black/10"
+						data-id="<%= p._id %>">
+						<div class="thumb w-full h-28 overflow-hidden">
+							<img
+								src="<%= p.image %>"
+								alt="<%= p.imageTitle || 'Related image' %>"
+								loading="lazy"
+								decoding="async"
+								referrerpolicy="no-referrer"
+								class="w-full h-full object-cover block" />
+						</div>
+						<% if (p.imageTitle) { %>
+						<div
+							class="mt-2 text-sm text-white/80 font-medium truncate px-2 pb-2"
+							><%= p.imageTitle %></div
+						>
+						<% } %>
+					</a>
+					<% }) %>
+				</div>
+			</section>
 		</aside>
 	</div>
-	<!-- end of 2-col responsive layout -->
-
-	<!-- Big "More like this" masonry-style grid -->
-	<div
-		id="relatedGrid"
-		class="masonry-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 mt-4"
-		style="grid-auto-rows: 12px">
-		<% related.forEach((p, idx) => { %>
-		<a
-			href="/pin/<%= p._id %>"
-			class="masonry-item block rounded-2xl overflow-hidden border border-white/10 group bg-black/10"
-			data-id="<%= p._id %>">
-			<div class="aspect-w-4 aspect-h-3 bg-white/5 w-full h-full">
-				<img
-					data-src="<%= p.image %>"
-					src="<%= p.image %>"
-					alt="<%= p.imageTitle || 'Related image' %>"
-					loading="lazy"
-					decoding="async"
-					referrerpolicy="no-referrer"
-					class="w-full h-full object-cover transition-transform group-hover:scale-105 will-change-transform" />
-			</div>
-			<% if (p.imageTitle) { %>
-			<div class="mt-3 text-sm text-white/80 font-medium truncate px-2">
-				<%= p.imageTitle %>
-			</div>
-			<% } %>
-		</a>
-		<% }) %>
-	</div>
+	<!-- end two-column -->
 </main>
 
 <!-- Tiny toast -->
 <div
 	id="toast"
-	class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden px-3 py-2 rounded-full text-sm bg-black/80 border border-white/10"></div>
+	class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden px-3 py-2 rounded-full text-sm bg-black/80 border border-white/10 z-40"></div>
 
 <style>
-	/* small helper for responsive masonry: grid-auto-rows is small (8px) and JS will set row-span */
-	.masonry-grid {
-		grid-auto-rows: 8px;
+	/* Accessibility: stronger focus */
+	a:focus,
+	button:focus {
+		outline: 3px solid rgba(255, 255, 255, 0.08);
+		outline-offset: 2px;
 	}
+
+	/* Masonry helper: grid baseline rows */
+	.masonry-grid {
+		display: grid;
+		grid-auto-rows: 8px; /* small baseline used by JS */
+		gap: 1rem; /* match Tailwind gap-4 */
+	}
+
+	/* Make each masonry item auto-size by spanning rows (JS sets grid-row-end) */
+	.masonry-item {
+		break-inside: avoid;
+		-webkit-column-break-inside: avoid;
+		-moz-column-break-inside: avoid;
+		align-self: start;
+	}
+
+	.masonry-item .thumb {
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+		display: block;
+	}
+
 	.masonry-item img {
 		display: block;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
 	}
-	/* better focus outline */
-	a:focus,
-	button:focus {
-		outline: 3px solid rgba(255, 255, 255, 0.08);
-		outline-offset: 2px;
+
+	/* Make the image visually smooth when zoom toggled */
+	#modalImage {
+		transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 	}
-	/* imageFrame center & pinch-friendly */
+
+	/* friendly pinch/zoom */
 	#imageFrame {
 		touch-action: pan-y pinch-zoom;
 	}
-	@media (min-width: 1024px) {
-		/* on large screens reduce gaps and improve layout */
+
+	/* small screens: reduce gaps */
+	@media (max-width: 640px) {
 		.masonry-grid {
-			gap: 12px;
+			gap: 10px;
 		}
 	}
 </style>
+<script>
+	(function () {
+		// small toast helper (re-uses your #toast element)
+		const toast = (msg, ms = 1600) => {
+			const el = document.getElementById('toast');
+			if (!el) return;
+			el.textContent = msg;
+			el.classList.remove('hidden');
+			clearTimeout(el._t);
+			el._t = setTimeout(() => el.classList.add('hidden'), ms);
+		};
+
+		// update UI for a single like button
+		function setLikeUI(btn, liked, likesCount) {
+			if (!btn) return;
+			btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+
+			// toggle icons: show filled when liked, outline when not
+			const heartLine = btn.querySelector('.ri-heart-line');
+			const heartFill = btn.querySelector('.ri-heart-fill');
+
+			if (heartLine) heartLine.classList.toggle('hidden', liked); // hide outline when liked
+			if (heartFill) heartFill.classList.toggle('hidden', !liked); // show fill when liked
+
+			// optional — provide a visible style change on liked state (you can style .liked in CSS)
+			btn.classList.toggle('liked', liked);
+
+			// update count display
+			try {
+				const id = btn.id.replace(/^likeBtn-/, '');
+				const countSpan = document.getElementById('likeCount-' + id);
+				if (countSpan && typeof likesCount !== 'undefined')
+					countSpan.textContent = String(likesCount);
+			} catch (e) {
+				/* ignore */
+			}
+		}
+
+		// single button wiring + handler
+		async function handleLikeClick(btn) {
+			if (!btn || btn.disabled) return;
+			const postId = btn.id.replace(/^likeBtn-/, '');
+			if (!postId) return;
+
+			const wasLiked = btn.getAttribute('aria-pressed') === 'true';
+			const countSpan = document.getElementById('likeCount-' + postId);
+			const prevCount = countSpan
+				? parseInt(countSpan.textContent || '0', 10)
+				: 0;
+
+			// optimistic update
+			const optimisticCount = wasLiked
+				? Math.max(0, prevCount - 1)
+				: prevCount + 1;
+			setLikeUI(btn, !wasLiked, optimisticCount);
+			btn.disabled = true;
+
+			try {
+				const res = await fetch(`/posts/${encodeURIComponent(postId)}/like`, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: { 'X-Requested-With': 'XMLHttpRequest' },
+				});
+
+				if (res.status === 401) {
+					// rollback
+					setLikeUI(btn, wasLiked, prevCount);
+					toast('Login required to like posts');
+					return;
+				}
+
+				const ct = (res.headers.get('content-type') || '').toLowerCase();
+				if (!res.ok || !ct.includes('application/json')) {
+					setLikeUI(btn, wasLiked, prevCount);
+					toast('Could not update like. Try again.');
+					console.error('Unexpected response from like endpoint', res.status);
+					return;
+				}
+
+				const data = await res.json().catch(() => null);
+				if (!data || !data.success) {
+					setLikeUI(btn, wasLiked, prevCount);
+					toast(data?.error || 'Failed to update like');
+					return;
+				}
+
+				// apply server-truth (data.liked, data.likesCount)
+				const serverLiked = !!data.liked;
+				const serverCount =
+					typeof data.likesCount === 'number'
+						? data.likesCount
+						: optimisticCount;
+				setLikeUI(btn, serverLiked, serverCount);
+			} catch (err) {
+				console.error('Network error while toggling like:', err);
+				setLikeUI(btn, wasLiked, prevCount);
+				toast('Network error');
+			} finally {
+				btn.disabled = false;
+			}
+		}
+
+		// wire a button (id starts with likeBtn-)
+		function wireLikeButton(btn) {
+			if (!btn || btn._likeWired) return;
+			btn._likeWired = true;
+
+			// ensure initial UI matches aria-pressed attribute and count
+			const id = btn.id.replace(/^likeBtn-/, '');
+			const initialPressed = btn.getAttribute('aria-pressed') === 'true';
+			const countSpan = document.getElementById('likeCount-' + id);
+			const initialCount = countSpan
+				? parseInt(countSpan.textContent || '0', 10)
+				: undefined;
+			setLikeUI(btn, initialPressed, initialCount);
+
+			btn.addEventListener('click', (ev) => {
+				ev.preventDefault();
+				handleLikeClick(btn);
+			});
+		}
+
+		// wire existing buttons and observe for future ones
+		function wireAllLikeButtons() {
+			document.querySelectorAll('[id^="likeBtn-"]').forEach(wireLikeButton);
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			wireAllLikeButtons();
+
+			// observe DOM changes so dynamically added posts are wired
+			const mo = new MutationObserver(() => wireAllLikeButtons());
+			mo.observe(document.body, { childList: true, subtree: true });
+		});
+	})();
+</script>
+
+<!-- Masonry JS: calculates grid-row spans for each item -->
+<script>
+	(function () {
+		const grids = ['#relatedGridMain', '#relatedGridAside'];
+
+		function getNumericStyleProperty(el, prop) {
+			const val = getComputedStyle(el).getPropertyValue(prop);
+			return parseFloat(val) || 0;
+		}
+
+		function resizeMasonryGrid(grid) {
+			if (!grid) return;
+			const rowHeight = getNumericStyleProperty(grid, 'grid-auto-rows'); // px
+			const rowGap = getNumericStyleProperty(grid, 'gap'); // px
+			Array.from(grid.children).forEach((item) => {
+				const content = item.querySelector('.thumb') || item;
+				if (!content) return;
+				const height = content.getBoundingClientRect().height;
+				const rowSpan = Math.max(
+					1,
+					Math.ceil((height + rowGap) / (rowHeight + rowGap)),
+				);
+				item.style.gridRowEnd = 'span ' + rowSpan;
+			});
+		}
+
+		function setupGrid(selector) {
+			const grid = document.querySelector(selector);
+			if (!grid) return;
+
+			const imgs = grid.querySelectorAll('img');
+			imgs.forEach((img) => {
+				if (img.complete) return;
+				img.addEventListener('load', () => resizeMasonryGrid(grid), {
+					once: true,
+				});
+				img.addEventListener('error', () => resizeMasonryGrid(grid), {
+					once: true,
+				});
+			});
+
+			const mo = new MutationObserver(() => {
+				setTimeout(() => resizeMasonryGrid(grid), 60);
+			});
+			mo.observe(grid, { childList: true, subtree: true });
+
+			setTimeout(() => resizeMasonryGrid(grid), 60);
+
+			let r;
+			window.addEventListener('resize', () => {
+				clearTimeout(r);
+				r = setTimeout(() => resizeMasonryGrid(grid), 120);
+			});
+		}
+
+		document.addEventListener('DOMContentLoaded', () => {
+			grids.forEach((sel) => setupGrid(sel));
+		});
+	})();
+</script>
 
 <script>
 	(() => {
@@ -294,16 +587,56 @@ post?.createdAt ? new Date(post.createdAt) : null; %>
 		const wrap = document.getElementById('modalImageWrap');
 		const img = document.getElementById('modalImage');
 
-		const likeBtn = document.getElementById('likeBtn');
-		const likeCount = document.getElementById('likeCount');
 		const shareBtn = document.getElementById('shareBtn');
+		const shareMenu = document.getElementById('shareMenu');
 		const postId = document
 			.querySelector('main[data-post-id]')
 			?.getAttribute('data-post-id');
 
-		// Smooth zoom and rotate state
+		const likeBtn = postId
+			? document.getElementById(`likeBtn-${postId}`)
+			: null;
+		const likeCountSpan = postId
+			? document.getElementById(`likeCount-${postId}`)
+			: null;
 
-		// basic pinch zoom detection for touch (two-finger distance)
+		// Expose toggleLike globally
+		window.toggleLike = async function toggleLike(postIdArg) {
+			const id = postIdArg || postId;
+			if (!id) return;
+			try {
+				const res = await fetch(`/posts/${id}/like`, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: { 'X-Requested-With': 'XMLHttpRequest' },
+				});
+
+				if (res.status === 401) {
+					toast('Login required to like posts');
+					return;
+				}
+
+				const ct = res.headers.get('content-type') || '';
+				if (!res.ok || !ct.includes('application/json')) {
+					toast('Could not update like. Try again.');
+					return;
+				}
+
+				const data = await res.json();
+				if (data && data.success) {
+					if (likeCountSpan) likeCountSpan.textContent = data.likesCount;
+					if (likeBtn)
+						likeBtn.setAttribute('aria-pressed', data.liked ? 'true' : 'false');
+				} else {
+					toast('Could not update like. Try again.');
+				}
+			} catch (err) {
+				console.error('Error liking post:', err);
+				toast('Network error');
+			}
+		};
+
+		// Pinch zoom (kept)
 		(function attachPinch() {
 			let startDist = null;
 			function dist(t) {
@@ -324,133 +657,233 @@ post?.createdAt ? new Date(post.createdAt) : null; %>
 					if (e.touches.length === 2 && startDist) {
 						const d = dist(e.touches);
 						const ratio = d / startDist;
-						img.style.transform = `scale(${Math.min(
-							3,
-							Math.max(1, ratio),
-						)}) rotate(${rotation}deg)`;
+						img.style.transform = `scale(${Math.min(3, Math.max(1, ratio))})`;
 					}
 				},
 				{ passive: true },
 			);
 			img?.addEventListener(
 				'touchend',
-				(e) => {
+				() => {
 					startDist = null;
-					applyTransform();
+					if (img) img.style.transform = '';
 				},
 				{ passive: true },
 			);
 		})();
 
-		// Like (progressive enhancement)
-		likeBtn?.addEventListener('click', async () => {
-			const pressed = likeBtn.getAttribute('aria-pressed') === 'true';
-			likeBtn.setAttribute('aria-pressed', String(!pressed));
-			const delta = pressed ? -1 : 1;
-			likeCount.textContent = Math.max(
-				0,
-				(+likeCount.textContent || 0) + delta,
-			);
-			try {
-				const res = await fetch(`/posts/${postId}/like`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-				});
-				if (!res.ok) throw new Error();
-			} catch {
-				/* ignore; UI already updated */
-			}
-		});
-
-		// Share (Web Share API → Clipboard fallback)
-		shareBtn?.addEventListener('click', async () => {
+		// Share handling: use Web Share when available, otherwise open dropdown
+		shareBtn?.addEventListener('click', async (ev) => {
+			ev.stopPropagation();
 			const shareData = {
 				title: document.title || '<%= title %>',
 				text: '<%= title %>',
 				url: window.location.href,
 			};
 			try {
-				if (navigator.share) await navigator.share(shareData);
-				else {
-					await navigator.clipboard.writeText(window.location.href);
-					toast('Link copied');
+				if (navigator.share) {
+					await navigator.share(shareData);
+				} else {
+					// toggle menu
+					if (shareMenu) {
+						const open = !shareMenu.classList.contains('hidden');
+						shareMenu.classList.toggle('hidden', open);
+						shareBtn.setAttribute('aria-expanded', String(!open));
+					}
 				}
-			} catch {
-				await navigator.clipboard.writeText(window.location.href);
+			} catch (e) {
+				// fallback: copy link
+				await navigator.clipboard
+					?.writeText(window.location.href)
+					.catch(() => {});
 				toast('Link copied');
 			}
 		});
 
-		// Comments (client-only demo)
-		const input = document.getElementById('commentInput');
-		const postButton = document.getElementById('postComment');
-		const list = document.getElementById('commentList');
+		// share menu actions (copy / native)
+		shareMenu?.addEventListener('click', async (ev) => {
+			const action = ev.target
+				.closest('[data-action]')
+				?.getAttribute('data-action');
+			if (!action) return;
+			if (action === 'copy') {
+				await navigator.clipboard
+					?.writeText(window.location.href)
+					.catch(() => {});
+				toast('Link copied');
+				shareMenu.classList.add('hidden');
+				shareBtn.setAttribute('aria-expanded', 'false');
+			}
+			if (action === 'native') {
+				if (navigator.share) {
+					try {
+						await navigator.share({
+							title: document.title,
+							text: document.title,
+							url: window.location.href,
+						});
+					} catch (e) {}
+				}
+				shareMenu.classList.add('hidden');
+				shareBtn.setAttribute('aria-expanded', 'false');
+			}
+		});
+
+		// close share menu on outside click
+		document.addEventListener('click', (ev) => {
+			if (!shareMenu) return;
+			if (
+				!shareMenu.classList.contains('hidden') &&
+				!shareMenu.contains(ev.target) &&
+				ev.target !== shareBtn
+			) {
+				shareMenu.classList.add('hidden');
+				shareBtn.setAttribute('aria-expanded', 'false');
+			}
+		});
+
+		// ===== COMMENTS =====
+		const input = document.getElementById(`commentInput-${postId}`);
+		const postButton = document.getElementById(`postComment-${postId}`);
+		const list = document.getElementById(`commentList-${postId}`);
+
+		let currentUser = null;
+		try {
+			currentUser = JSON.parse(
+				document.querySelector('main')?.dataset.currentUser || 'null',
+			);
+		} catch (e) {
+			currentUser = null;
+		}
+
+		function createCommentNode({ username, profileimage, text, createdAt }) {
+			const li = document.createElement('li');
+			li.className =
+				'px-3 py-2 rounded-lg bg-white/5 border border-white/10 flex items-start gap-3';
+			const imgEl = document.createElement('img');
+			imgEl.className = 'w-8 h-8 rounded-full object-cover';
+			imgEl.src = profileimage || '/images/defaultpic.png';
+			const inner = document.createElement('div');
+			inner.className = 'flex-1';
+			const who = document.createElement('div');
+			who.className = 'text-sm font-semibold';
+			who.textContent = username || 'Unknown';
+			const content = document.createElement('div');
+			content.className = 'text-sm mt-1 break-words';
+			content.textContent = text || '';
+			const when = document.createElement('div');
+			when.className = 'text-xs text-white/60 mt-1';
+			when.textContent = createdAt ? new Date(createdAt).toLocaleString() : '';
+			inner.appendChild(who);
+			inner.appendChild(content);
+			inner.appendChild(when);
+			li.appendChild(imgEl);
+			li.appendChild(inner);
+			return li;
+		}
+
 		postButton?.addEventListener('click', async () => {
 			const text = (input?.value || '').trim();
 			if (!text) return;
+
+			postButton.disabled = true;
+			postButton.classList.add('opacity-60', 'pointer-events-none');
+
+			const tempId = `temp-${Date.now()}`;
+			const optimisticNode = createCommentNode({
+				username:
+					currentUser && currentUser.username ? currentUser.username : 'You',
+				profileimage:
+					currentUser && currentUser.profileimage
+						? currentUser.profileimage
+						: '/images/defaultpic.png',
+				text,
+				createdAt: new Date().toISOString(),
+			});
+			optimisticNode.id = `comment-${tempId}`;
+			list?.prepend(optimisticNode);
+
+			const cc = document.getElementById(`commentCount-${postId}`);
+			if (cc) cc.textContent = String((+cc.textContent || 0) + 1);
+
 			try {
 				const res = await fetch(`/posts/${postId}/comments`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest',
+					},
 					body: JSON.stringify({ text }),
 				});
-				if (!res.ok) throw new Error();
-			} catch (_) {
-				/* ignore – progressive */
-			}
 
-			const li = document.createElement('li');
-			li.className = 'px-3 py-2 rounded-lg bg-white/5 border border-white/10';
-			li.textContent = text;
-			list?.prepend(li);
-			input.value = '';
-			const cc = document.getElementById('commentCount');
-			if (cc) cc.textContent = String((+cc.textContent || 0) + 1);
+				if (res.redirected) {
+					window.location = res.url;
+					return;
+				}
+
+				if (!res.ok) {
+					let errMsg = 'Failed to post comment';
+					const ct = res.headers.get('content-type') || '';
+					if (ct.includes('application/json')) {
+						const errJson = await res.json().catch(() => null);
+						if (errJson && errJson.error) errMsg = errJson.error;
+					}
+					toast(errMsg);
+					document.getElementById(`comment-${tempId}`)?.remove();
+					if (cc)
+						cc.textContent = String(Math.max(0, (+cc.textContent || 1) - 1));
+					return;
+				}
+
+				const ct = res.headers.get('content-type') || '';
+				if (!ct.includes('application/json')) {
+					toast('Unexpected server response');
+					document.getElementById(`comment-${tempId}`)?.remove();
+					if (cc)
+						cc.textContent = String(Math.max(0, (+cc.textContent || 1) - 1));
+					return;
+				}
+
+				const data = await res.json();
+				if (data && data.success && data.comment) {
+					document.getElementById(`comment-${tempId}`)?.remove();
+					const c = data.comment;
+					const serverNode = createCommentNode({
+						username: c.user && c.user.username ? c.user.username : 'Unknown',
+						profileimage:
+							c.user && c.user.profileimage
+								? c.user.profileimage
+								: '/images/defaultpic.png',
+						text: c.text,
+						createdAt: c.createdAt,
+					});
+					list?.prepend(serverNode);
+				} else {
+					toast(data?.error || 'Failed to post comment');
+					document.getElementById(`comment-${tempId}`)?.remove();
+					if (cc)
+						cc.textContent = String(Math.max(0, (+cc.textContent || 1) - 1));
+				}
+			} catch (err) {
+				console.error('Comment post failed', err);
+				toast('Network error');
+				document.getElementById(`comment-${tempId}`)?.remove();
+				if (cc)
+					cc.textContent = String(Math.max(0, (+cc.textContent || 1) - 1));
+			} finally {
+				postButton.disabled = false;
+				postButton.classList.remove('opacity-60', 'pointer-events-none');
+				if (input) input.value = '';
+			}
 		});
 
-		// Keyboard shortcuts
+		// keyboard shortcuts
 		window.addEventListener('keydown', (e) => {
-			if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName))
+			if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName))
 				return;
 			if (e.key === 'l' || e.key === 'L') likeBtn?.click();
 			if (e.key === 'c' || e.key === 'C') input?.focus();
-			if (e.key === 'z' || e.key === 'Z') zoomBtn?.click();
-			if (e.key === 'r' || e.key === 'R') rotateBtn?.click();
-		});
-
-		// ===== Masonry: compute row spans based on image aspect ratio =====
-		function calculateSpans() {
-			const grid = document.getElementById('relatedGrid');
-			if (!grid) return;
-			const rowHeight =
-				parseInt(getComputedStyle(grid).getPropertyValue('grid-auto-rows')) ||
-				8;
-			const gap = parseInt(getComputedStyle(grid).getPropertyValue('gap')) || 8;
-			const items = grid.querySelectorAll('.masonry-item');
-			items.forEach((item) => {
-				const img = item.querySelector('img');
-				if (!img) return;
-				const h = img.naturalHeight || img.height;
-				const w = img.naturalWidth || img.width;
-				const rowSpan = Math.ceil(
-					((h / w) * item.offsetWidth + gap) / (rowHeight + gap),
-				);
-				item.style.gridRowEnd = `span ${Math.max(2, rowSpan)}`;
-			});
-		}
-
-		// Recalculate after images load & on resize
-		window.addEventListener('load', () => {
-			calculateSpans();
-		});
-		window.addEventListener('resize', () => {
-			calculateSpans();
-		});
-
-		// Also recalc per image when it finishes loading
-		document.querySelectorAll('#relatedGrid img').forEach((img) => {
-			if (img.complete) return; // if already loaded, skip
-			img.addEventListener('load', () => calculateSpans());
 		});
 	})();
 </script>

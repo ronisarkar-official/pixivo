@@ -139,6 +139,12 @@ post._id ? post._id : ''; %>
 					</div>
 				</header>
 				<!-- Title & description (desktop) -->
+				<div class="mt-3 lg:hidden">
+					<div class="font-semibold text-base leading-tight"><%= title %></div>
+					<% if (desc) { %>
+					<p class="mt-1 text-sm text-white/80"><%= desc %></p>
+					<% } %>
+				</div>
 				<div class="hidden lg:block">
 					<h1 class="text-2xl font-extrabold leading-tight"><%= title %></h1>
 					<% if (desc) { %>
@@ -233,15 +239,21 @@ post._id ? post._id : ''; %>
 			</div>
 
 			<!-- More like this (masonry) -->
-			<section class="mt-6 w-full p-1">
+			<section class="mt-6 w-full">
+				<% function shuffleArray(arr) { const a = Array.isArray(arr) ?
+				arr.slice() : []; for (let i = a.length - 1; i > 0; i--) { const j =
+				Math.floor(Math.random() * (i + 1)); const tmp = a[i]; a[i] = a[j]; a[j]
+				= tmp; } return a; } const shuffledMain = shuffleArray(related || []);
+				%>
+
 				<div
 					id="relatedGridMain"
 					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
-					<% related.forEach((p) => { %>
+					<% shuffledMain.forEach((p) => { %>
 					<a
 						href="/pin/<%= p._id %>"
-						class="masonry-item block rounded-2xl overflow-hidden border border-white/10 group bg-black/10"
-						data-id="<%= p._id %>">
+						class="masonry-item block">
+						<!-- Fully rounded image -->
 						<div
 							class="thumb w-full h-44 sm:h-36 md:h-44 lg:h-40 overflow-hidden">
 							<img
@@ -250,13 +262,14 @@ post._id ? post._id : ''; %>
 								loading="lazy"
 								decoding="async"
 								referrerpolicy="no-referrer"
-								class="w-full h-full object-cover block" />
+								class="w-full h-full object-cover block rounded-2xl" />
 						</div>
+
+						<!-- Title below image -->
 						<% if (p.imageTitle) { %>
-						<div
-							class="mt-2 text-sm text-white/80 font-medium truncate px-2 pb-2"
-							><%= p.imageTitle %></div
-						>
+						<div class="mt-2 text-sm text-white/80 font-medium truncate px-2">
+							<%= p.imageTitle %>
+						</div>
 						<% } %>
 					</a>
 					<% }) %>
@@ -264,46 +277,41 @@ post._id ? post._id : ''; %>
 			</section>
 
 			<!-- caption / meta (mobile) -->
-			<div class="mt-3 lg:hidden">
-				<div class="font-semibold text-base leading-tight"><%= title %></div>
-				<% if (desc) { %>
-				<p class="mt-1 text-sm text-white/80"><%= desc %></p>
-				<% } %>
-			</div>
 		</section>
 
 		<!-- Right: Info Panel -->
 		<aside class="lg:col-span-5 flex flex-col gap-4">
 			<!-- sticky header on large screens -->
-			<% function
-			shuffleArray(arr) { const a = Array.isArray(arr) ? arr.slice() : []; for
-			(let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() *
-			(i + 1)); const tmp = a[i]; a[i] = a[j]; a[j] = tmp; } return a; } const
-			shuffledRelated = shuffleArray(related || []); %>
+			<% function shuffleArray(arr) { const a = Array.isArray(arr) ? arr.slice()
+			: []; for (let i = a.length - 1; i > 0; i--) { const j =
+			Math.floor(Math.random() * (i + 1)); const tmp = a[i]; a[i] = a[j]; a[j] =
+			tmp; } return a; } const shuffledRelated = shuffleArray(related || []); %>
 
-			<section class="mt-6 w-full p-1">
+			<section class="w-full p-1">
 				<div
 					id="relatedGridAside"
-					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
+					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
 					<% shuffledRelated.forEach((p) => { %>
 					<a
 						href="/pin/<%= p._id %>"
-						class="masonry-item block rounded-2xl overflow-hidden border border-white/10 group bg-black/10"
+						class="masonry-item block"
 						data-id="<%= p._id %>">
-						<div class="thumb w-full h-28 overflow-hidden">
+						<!-- Fully rounded image -->
+						<div class="thumb w-full h-28 overflow-hidden gap-2">
 							<img
 								src="<%= p.image %>"
 								alt="<%= p.imageTitle || 'Related image' %>"
 								loading="lazy"
 								decoding="async"
 								referrerpolicy="no-referrer"
-								class="w-full h-full object-cover block" />
+								class="w-full h-full object-cover block rounded-2xl" />
 						</div>
+
+						<!-- Title below image -->
 						<% if (p.imageTitle) { %>
-						<div
-							class="mt-2 text-sm text-white/80 font-medium truncate px-2 pb-2"
-							><%= p.imageTitle %></div
-						>
+						<div class="mt-2 text-sm text-white/80 font-medium truncate px-2">
+							<%= p.imageTitle %>
+						</div>
 						<% } %>
 					</a>
 					<% }) %>

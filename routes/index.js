@@ -17,6 +17,16 @@ passport.use(new LocalStrategy(userModel.authenticate()));
 passport.serializeUser(userModel.serializeUser());
 passport.deserializeUser(userModel.deserializeUser());
 
+function timeAgo(d) {
+	let s = Math.floor((Date.now() - new Date(d)) / 1000),
+		u = { y: 31536000, mo: 2592000, w: 604800, d: 86400, h: 3600, m: 60, s: 1 };
+	for (let k in u) {
+		let v = Math.floor(s / u[k]);
+		if (v) return v + k ;
+	}
+	return 'just now';
+}
+
 // ===== Rate Limiter for Auth =====
 const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
@@ -83,8 +93,6 @@ router.get('/feed', isLoggedIn, async (req, res) => {
 	});
 });
 
-
-
 // Single Post Page
 router.get('/pin/:id', isLoggedIn, async (req, res) => {
 	try {
@@ -99,72 +107,68 @@ router.get('/pin/:id', isLoggedIn, async (req, res) => {
 		const user = await userModel.findOne({ username: req.user.username });
 		const posts = await postModel.find().limit(20);
 
-		res.render('post', { user, post, posts });
+		res.render('post', { user, post, posts, timeAgo });
 	} catch (err) {
 		console.error('Error fetching post:', err);
 		res.status(500).send('Server error');
 	}
 });
 
-
-
 // Toggle like
 router.post('/posts/:id/like', isLoggedIn, async (req, res) => {
-  try {
-    const postId = req.params.id;
-    const userId = req.user._id;
+	try {
+		const postId = req.params.id;
+		const userId = req.user._id;
 
-    // use postModel (the model you required at top)
-    const post = await postModel.findById(postId);
-    if (!post) return res.status(404).json({ error: 'Post not found' });
+		// use postModel (the model you required at top)
+		const post = await postModel.findById(postId);
+		if (!post) return res.status(404).json({ error: 'Post not found' });
 
-    const alreadyLiked = post.likes.includes(userId);
+		const alreadyLiked = post.likes.includes(userId);
 
-    if (alreadyLiked) post.likes.pull(userId);
-    else post.likes.push(userId);
+		if (alreadyLiked) post.likes.pull(userId);
+		else post.likes.push(userId);
 
-    await post.save();
+		await post.save();
 
-    res.json({
-      success: true,
-      liked: !alreadyLiked,
-      likesCount: post.likes.length
-    });
-  } catch (err) {
-    console.error('Like route error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+		res.json({
+			success: true,
+			liked: !alreadyLiked,
+			likesCount: post.likes.length,
+		});
+	} catch (err) {
+		console.error('Like route error:', err);
+		res.status(500).json({ error: 'Server error' });
+	}
 });
-
 
 // Add comment to a post
 // Add a comment — POST /posts/:id/comments
 router.post('/posts/:id/comments', isLoggedIn, async (req, res) => {
-  try {
-    const post = await postModel.findById(req.params.id);
-    if (!post) return res.status(404).json({ error: 'Post not found' });
+	try {
+		const post = await postModel.findById(req.params.id);
+		if (!post) return res.status(404).json({ error: 'Post not found' });
 
-    // validate
-    const text = (req.body.text || '').trim();
-    if (!text) return res.status(400).json({ error: 'Comment text required' });
+		// validate
+		const text = (req.body.text || '').trim();
+		if (!text) return res.status(400).json({ error: 'Comment text required' });
 
-    post.comments.push({ text, user: req.user._id });
-    await post.save();
+		post.comments.push({ text, user: req.user._id });
+		await post.save();
 
-    // re-populate the last comment's user data
-    const populated = await postModel
-      .findById(post._id)
-      .populate('comments.user', 'username fullname profileimage');
+		// re-populate the last comment's user data
+		const populated = await postModel
+			.findById(post._id)
+			.populate('comments.user', 'username fullname profileimage');
 
-    const newComment = populated.comments[populated.comments.length - 1];
+		const newComment = populated.comments[populated.comments.length - 1];
 
-    return res.json({ success: true, comment: newComment });
-  } catch (err) {
-    console.error('Comment error:', err);
-    return res.status(500).json({ error: 'Server error' });
-  }
+		return res.json({ success: true, comment: newComment });
+	} catch (err) {
+		console.error('Comment error:', err);
+		return res.status(500).json({ error: 'Server error' });
+	}
 });
-
 
 // Profile Page
 router.get('/profile', isLoggedIn, async (req, res) => {
@@ -182,7 +186,6 @@ router.get('/profile', isLoggedIn, async (req, res) => {
 		res.status(500).send('Server error');
 	}
 });
-
 
 router.get('/allpins', isLoggedIn, async (req, res) => {
 	const user = await userModel
@@ -289,7 +292,5 @@ router.get('/logout', (req, res, next) => {
 		res.redirect('/');
 	});
 });
-
-
 
 module.exports = router;

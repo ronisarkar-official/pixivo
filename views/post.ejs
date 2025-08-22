@@ -17,7 +17,7 @@ post._id ? post._id : ''; %>
 	data-post-id="<%= safePostId %>"
 	data-current-user='<%- (JSON.stringify(user || null) || "null").replace(/</g, "\\u003c") %>'>
 	<!-- Top actions -->
-	<div class="mb-4 flex items-center justify-between gap-3 z-10">
+	<div class="mb-4 flex items-center justify-between gap-3 z-[-1]">
 		<a
 			href="javascript:history.back()"
 			class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5 transition focus-visible:ring-2 focus-visible:ring-white/20"
@@ -36,7 +36,7 @@ post._id ? post._id : ''; %>
 					aria-expanded="false"
 					class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus-visible:ring-2 focus-visible:ring-white/20 cursor-pointer">
 					<i
-						class="ri-share-forward-line text-lg"
+						class="ri-share-forward-line text-lg z-[-10]"
 						aria-hidden="true"></i>
 					<span class="hidden sm:inline">Share</span>
 				</button>
@@ -44,7 +44,7 @@ post._id ? post._id : ''; %>
 				<!-- Dropdown for devices without Web Share API (hidden by default) -->
 				<div
 					id="shareMenu"
-					class="hidden absolute right-0 mt-2 w-44 rounded-lg bg-[#0b1220] border border-white/10 shadow-2xl py-1 z-20"
+					class="hidden absolute right-0 mt-2 w-44 rounded-lg bg-[#0b1220] border border-white/10 shadow-2xl py-1 z-[-50]"
 					role="menu"
 					aria-label="Share menu">
 					<button
@@ -112,7 +112,7 @@ post._id ? post._id : ''; %>
 						fetchpriority="high"
 						decoding="async"
 						loading="eager"
-						class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 rounded-lg"
+						class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 rounded-lg z-[-10]"
 						tabindex="0" />
 				</div>
 			</div>
@@ -254,7 +254,7 @@ post._id ? post._id : ''; %>
 
 				<div
 					id="relatedGridMain"
-					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
 					<% shuffledMain.forEach((p) => { %>
 					<a
 						href="/pin/<%= p._id %>"

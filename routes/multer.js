@@ -10,16 +10,27 @@ cloudinary.config({
 	api_secret: process.env.CLOUDINARY_API_SECRET || 'your_api_secret',
 });
 
-// Create Cloudinary storage engine
 const storage = new CloudinaryStorage({
 	cloudinary: cloudinary,
 	params: {
-		// removed folder → no /profilePic/ in URL
 		public_id: () => {
 			// Generate short ID (6 chars)
 			return Math.random().toString(36).substring(2, 8);
 		},
-		allowed_formats: ['jpg', 'png', 'jpeg', 'gif'],
+		allowed_formats: [
+			'jpg',
+			'jpeg',
+			'png',
+			'gif',
+			'bmp',
+			'tiff',
+			'tif',
+			'ico',
+			'svg',
+			'webp',
+			'heif',
+			'heic',
+		],
 		transformation: [{ width: 800, height: 800, crop: 'limit' }],
 	},
 });

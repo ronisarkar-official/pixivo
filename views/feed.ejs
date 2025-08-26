@@ -1,6 +1,9 @@
 <% include ./partials/header.ejs %> <% const safePosts = Array.isArray(posts) ?
-posts.slice() : []; const BATCH_SIZE = 20; const firstBatch = safePosts.slice(0,
-BATCH_SIZE); const remaining = safePosts.slice(BATCH_SIZE); %>
+posts.slice() : []; for (let i = safePosts.length - 1; i > 0; i--) { const j =
+Math.floor(Math.random() * (i + 1)); [safePosts[i], safePosts[j]] =
+[safePosts[j], safePosts[i]]; } const BATCH_SIZE = 20; const firstBatch =
+safePosts.slice(0, BATCH_SIZE); const remaining = safePosts.slice(BATCH_SIZE);
+%>
 
 <!-- Search Form (unchanged) -->
 <div class="mb-8 static z-0">

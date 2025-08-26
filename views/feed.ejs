@@ -1,12 +1,8 @@
-<% include ./partials/header.ejs %> 
-<% 
-// clone posts safely
-const safePosts = Array.isArray(posts) ? posts.slice() : []; 
-// shuffle posts randomly for each page load
-safePosts.sort(() => Math.random() - 0.5); 
-%>
+<% include ./partials/header.ejs %> <% const safePosts = Array.isArray(posts) ?
+posts.slice() : []; const BATCH_SIZE = 20; const firstBatch = safePosts.slice(0,
+BATCH_SIZE); const remaining = safePosts.slice(BATCH_SIZE); %>
 
-<!-- Search Form -->
+<!-- Search Form (unchanged) -->
 <div class="mb-8 static z-0">
 	<div class="flex justify-center mt-4 static">
 		<form
@@ -31,9 +27,11 @@ safePosts.sort(() => Math.random() - 0.5);
 </div>
 
 <div class="max-w-5xl mx-auto mt-10 px-4 sm:px-0">
-	<div class="columns-2 gap-4 space-y-4 mt-6 sm:columns-3 lg:columns-4">
-		<% if (posts.length > 0) { %> <% safePosts.forEach((elem, idx) => { %>
-		<!-- Pin card -->
+	<div
+		id="pinsColumn"
+		class="columns-2 gap-4 space-y-4 mt-6 sm:columns-3 lg:columns-4">
+		<% if (firstBatch.length > 0) { %> <% firstBatch.forEach((elem, idx) => { %>
+		<!-- Pin card (exact same layout & data attributes) -->
 		<a
 			href="/pin/<%= elem._id %>"
 			class="block break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300">
@@ -49,15 +47,15 @@ safePosts.sort(() => Math.random() - 0.5);
 				<img
 					src="<%= elem.image %>"
 					alt="<%= elem.imageTitle %>"
-					class="w-full object-cover rounded-2xl"
-					loading="lazy" />
+					class="w-full object-cover rounded-2xl pin-img"
+					loading="lazy"
+					decoding="async" />
 				<% if (elem.imageTitle) { %>
 				<div class="p-3 text-sm text-white"><%= elem.imageTitle %></div>
 				<% } %>
 			</div>
 		</a>
 		<% }) %> <% } else { %>
-		<!-- No results message -->
 		<div class="col-span-full text-center py-8 md:py-0 px-4 md:px-0">
 			<h3 class="text-lg md:text-xl font-medium text-gray-500">
 				<% if (q) { %> No pins found for "<%= q %>" <% } else { %> No pins
@@ -67,35 +65,31 @@ safePosts.sort(() => Math.random() - 0.5);
 			<div class="mt-4 md:mt-3">
 				<a
 					href="/feed"
-					class="text-blue-500 hover:underline inline-block md:mr-[9.5rem]">
-					View all pins
-				</a>
+					class="text-blue-500 hover:underline inline-block md:mr-[9.5rem]"
+					>View all pins</a
+				>
 			</div>
 			<% } %>
 		</div>
 		<% } %>
 	</div>
+
+	<!-- sentinel used to trigger loading more batches -->
+	<div
+		id="pinsSentinel"
+		class="h-8"></div>
 </div>
 
-
-<!-- Pinterest-like Modal -->
-
 <style>
-	/* show/hide and transitions */
-	#imageModal.show {
-		display: block;
+	/* purely visual fade-in for images: doesn't affect layout */
+	.pin-img {
+		transition: opacity 0.36s ease, transform 0.36s ease;
+		opacity: 0;
+		transform: translateZ(0);
 	}
-	#imageModal.show #modalBackdrop {
+	.pin-img.loaded {
 		opacity: 1;
-		pointer-events: auto;
-	}
-	#imageModal.show #modalPanel {
-		opacity: 1;
-		transform: none;
-		pointer-events: auto;
 	}
 </style>
-
-<!-- <script src="/javascripts/script.js"></script> -->
-
+<script src="/javascripts/feed.js"></script>
 <% include ./partials/footer.ejs %>

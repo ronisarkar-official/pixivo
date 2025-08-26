@@ -1,119 +1,148 @@
-
 <script>
-	document.addEventListener('DOMContentLoaded', () => {
-		// ---------- Helpers ----------
-		const hasHidden = (el) => el.classList.contains('hidden');
-		const toggleHidden = (el, state) =>
-			el?.classList[state ? 'add' : 'remove']('hidden');
-		const setExpanded = (btn, state) =>
-			btn?.setAttribute('aria-expanded', state);
+document.addEventListener('DOMContentLoaded', () => {
+  // ==============================
+  // NAVBAR SHOW/HIDE ON SCROLL
+  // ==============================
+  const backToTop = document.getElementById('backToTop');
 
-		// ---------- 1) aria-controls toggles ----------
-		document.querySelectorAll('[aria-controls]').forEach((btn) => {
-			const target = document.getElementById(btn.getAttribute('aria-controls'));
-			if (!target)
-				return console.warn(
-					`No target for ${btn.getAttribute('aria-controls')}`,
-				);
-			setExpanded(btn, !hasHidden(target));
-			btn.addEventListener('click', (e) => {
-				e.preventDefault();
-				const hidden = hasHidden(target);
-				toggleHidden(target, !hidden);
-				setExpanded(btn, hidden);
-			});
-		});
-
-		// ---------- 2) Mobile search toggle ----------
-		const mobileSearchToggle = document.getElementById(
-			'toggleSidebarMobileSearch',
-		);
-		const topbarSearchForm = document.querySelector('form[action="#"]');
-		if (mobileSearchToggle && topbarSearchForm) {
-			setExpanded(mobileSearchToggle, !hasHidden(topbarSearchForm));
-			mobileSearchToggle.addEventListener('click', (e) => {
-				e.preventDefault();
-				if (window.innerWidth < 1024) {
-					const hidden = hasHidden(topbarSearchForm);
-					toggleHidden(topbarSearchForm, !hidden);
-					setExpanded(mobileSearchToggle, hidden);
+			window.addEventListener('scroll', () => {
+				if (window.scrollY > 200) {
+					backToTop.classList.remove('hidden');
+					setTimeout(() => {
+						backToTop.classList.add('opacity-100', 'scale-100');
+						backToTop.classList.remove('opacity-0', 'scale-90');
+					}, 10);
+				} else {
+					backToTop.classList.add('opacity-0', 'scale-90');
+					backToTop.classList.remove('opacity-100', 'scale-100');
+					setTimeout(() => {
+						if (backToTop.classList.contains('opacity-0')) {
+							backToTop.classList.add('hidden');
+						}
+					}, 300); // wait for animation
 				}
 			});
-		}
 
-		// ---------- 3) Dropdown system ----------
-		const dropdownToggles = [
-			...document.querySelectorAll('[data-dropdown-toggle]'),
-		];
-		const closeDropdown = (id) => {
-			const dd = document.getElementById(id);
-			toggleHidden(dd, true);
-			document
-				.querySelectorAll(`[data-dropdown-toggle="${id}"]`)
-				.forEach((t) => setExpanded(t, false));
-		};
-		const openDropdown = (id) => {
-			dropdownToggles.forEach(
-				(t) =>
-					t.getAttribute('data-dropdown-toggle') !== id &&
-					closeDropdown(t.getAttribute('data-dropdown-toggle')),
-			);
-			toggleHidden(document.getElementById(id), false);
-			document
-				.querySelectorAll(`[data-dropdown-toggle="${id}"]`)
-				.forEach((t) => setExpanded(t, true));
-		};
-
-		dropdownToggles.forEach((toggle) => {
-			const id = toggle.getAttribute('data-dropdown-toggle');
-			const dropdown = document.getElementById(id);
-			setExpanded(toggle, dropdown ? !hasHidden(dropdown) : false);
-			toggle.addEventListener('click', (e) => {
-				e.stopPropagation();
-				hasHidden(dropdown) ? openDropdown(id) : closeDropdown(id);
+			backToTop.addEventListener('click', () => {
+				window.scrollTo({ top: 0, behavior: 'smooth' });
 			});
-		});
 
-		// ---------- 4) Click outside ----------
-		document.addEventListener('click', (e) => {
-			dropdownToggles.forEach((toggle) => {
-				const id = toggle.getAttribute('data-dropdown-toggle');
-				const dd = document.getElementById(id);
-				if (
-					dd &&
-					!hasHidden(dd) &&
-					!dd.contains(e.target) &&
-					!toggle.contains(e.target)
-				)
-					closeDropdown(id);
-			});
-			if (
-				topbarSearchForm &&
-				!hasHidden(topbarSearchForm) &&
-				window.innerWidth < 1024 &&
-				!topbarSearchForm.contains(e.target) &&
-				!mobileSearchToggle.contains(e.target)
-			) {
-				toggleHidden(topbarSearchForm, true);
-				setExpanded(mobileSearchToggle, false);
-			}
-		});
+  // ==============================
+  // PIN DROPDOWN TO TOP
+  // ==============================
+  const pinDropdown = () => {
+    const dd = document.getElementById('dropdown');
+    if (!dd) return;
 
-		// ---------- 5) Escape key ----------
-		document.addEventListener('keydown', (e) => {
-			if (e.key === 'Escape') {
-				dropdownToggles.forEach((t) =>
-					closeDropdown(t.getAttribute('data-dropdown-toggle')),
-				);
-				if (topbarSearchForm && window.innerWidth < 1024) {
-					toggleHidden(topbarSearchForm, true);
-				}
-			}
-		});
+    if (dd.parentElement !== document.body) document.body.appendChild(dd);
 
-		// ---------- 6) Resize handler ----------
-	});
+    dd.classList.remove('absolute', 'mt-2');
+    Object.assign(dd.style, {
+      position: 'fixed',
+      top: '52px',
+      right: '12px',
+      marginTop: 0,
+      zIndex: 9999,
+      minWidth: '220px',
+      maxWidth: '90vw',
+    });
+  };
+  pinDropdown();
+
+  new MutationObserver(pinDropdown).observe(document.documentElement, { childList: true, subtree: true });
+  window.__pinDropdown = pinDropdown; // debugging
+
+  // ==============================
+  // DROPDOWNS + TOGGLES
+  // ==============================
+  const hasHidden = (el) => el?.classList.contains('hidden');
+  const toggleHidden = (el, state) => el?.classList[state ? 'add' : 'remove']('hidden');
+  const setExpanded = (btn, state) => btn?.setAttribute('aria-expanded', state);
+
+  // aria-controls
+  document.querySelectorAll('[aria-controls]').forEach((btn) => {
+    const target = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!target) return;
+    setExpanded(btn, !hasHidden(target));
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const hidden = hasHidden(target);
+      toggleHidden(target, !hidden);
+      setExpanded(btn, hidden);
+    });
+  });
+
+  // Mobile search toggle
+  const mobileSearchToggle = document.getElementById('toggleSidebarMobileSearch');
+  const topbarSearchForm = document.querySelector('form[action="#"]');
+  if (mobileSearchToggle && topbarSearchForm) {
+    setExpanded(mobileSearchToggle, !hasHidden(topbarSearchForm));
+    mobileSearchToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.innerWidth < 1024) {
+        const hidden = hasHidden(topbarSearchForm);
+        toggleHidden(topbarSearchForm, !hidden);
+        setExpanded(mobileSearchToggle, hidden);
+      }
+    });
+  }
+
+  // Dropdown system
+  const dropdownToggles = [...document.querySelectorAll('[data-dropdown-toggle]')];
+  const closeDropdown = (id) => {
+    const dd = document.getElementById(id);
+    toggleHidden(dd, true);
+    document.querySelectorAll(`[data-dropdown-toggle="${id}"]`).forEach((t) => setExpanded(t, false));
+  };
+  const openDropdown = (id) => {
+    dropdownToggles.forEach((t) =>
+      t.getAttribute('data-dropdown-toggle') !== id &&
+      closeDropdown(t.getAttribute('data-dropdown-toggle'))
+    );
+    toggleHidden(document.getElementById(id), false);
+    document.querySelectorAll(`[data-dropdown-toggle="${id}"]`).forEach((t) => setExpanded(t, true));
+  };
+
+  dropdownToggles.forEach((toggle) => {
+    const id = toggle.getAttribute('data-dropdown-toggle');
+    const dropdown = document.getElementById(id);
+    setExpanded(toggle, dropdown ? !hasHidden(dropdown) : false);
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hasHidden(dropdown) ? openDropdown(id) : closeDropdown(id);
+    });
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    dropdownToggles.forEach((toggle) => {
+      const id = toggle.getAttribute('data-dropdown-toggle');
+      const dd = document.getElementById(id);
+      if (dd && !hasHidden(dd) && !dd.contains(e.target) && !toggle.contains(e.target))
+        closeDropdown(id);
+    });
+    if (
+      topbarSearchForm &&
+      !hasHidden(topbarSearchForm) &&
+      window.innerWidth < 1024 &&
+      !topbarSearchForm.contains(e.target) &&
+      !mobileSearchToggle.contains(e.target)
+    ) {
+      toggleHidden(topbarSearchForm, true);
+      setExpanded(mobileSearchToggle, false);
+    }
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      dropdownToggles.forEach((t) => closeDropdown(t.getAttribute('data-dropdown-toggle')));
+      if (topbarSearchForm && window.innerWidth < 1024) toggleHidden(topbarSearchForm, true);
+    }
+  });
+});
 </script>
+
 
 </body>
 </html>

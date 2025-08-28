@@ -1,15 +1,25 @@
-<%- include("partials/header.ejs") %> <% const author = post && post.user ?
-post.user : {}; const relAll = Array.isArray(posts) ? posts : []; const related
-= relAll.filter(p => String(p._id) !== String(post._id)).slice(0, 12); const
-imgUrl = post?.image || "/images/placeholder.png"; const imgAlt =
-post?.imageTitle || "Post image"; const title = post?.imageTitle || "Untitled";
-const desc = post?.imageDesc || ""; const likes = Array.isArray(post?.likes) ?
-post.likes.length : 0; const commentsCount = Array.isArray(post?.comments) ?
-post.comments.length : 0; const authorImg = author?.profileimage ||
-"/images/defaultpic.png"; const authorName = author?.fullname || "Unknown";
-const authorUsername = author?.username || "unknown"; const createdAt =
-post?.createdAt ? new Date(post.createdAt) : null; const safePostId = post &&
-post._id ? post._id : ''; %>
+<%- include("partials/header.ejs") %> <% var author = (post && post.user) ?
+post.user : {}; var relAll = Array.isArray(posts) ? posts : []; var excludeId =
+(post && post._id) ? String(post._id) : null; var relatedUnfiltered = excludeId
+? relAll.filter(function(p){ return String(p._id) !== excludeId; }) : relAll;
+var passedRelatedLimit = (typeof locals !== 'undefined' && typeof
+locals.relatedLimit !== 'undefined' && isFinite(Number(locals.relatedLimit))) ?
+Number(locals.relatedLimit) : undefined; var relatedLimit = (typeof
+passedRelatedLimit === 'number') ? passedRelatedLimit : 17; var related =
+(relatedLimit > 0) ? relatedUnfiltered.slice(0, relatedLimit) :
+relatedUnfiltered; var imgUrl = (post && post.image) ? post.image :
+'/images/placeholder.png'; var imgAlt = (post && post.imageTitle) ?
+post.imageTitle : 'Post image'; var title = (post && post.imageTitle) ?
+post.imageTitle : 'Untitled'; var desc = (post && post.imageDesc) ?
+post.imageDesc : ''; var likes = (post && Array.isArray(post.likes)) ?
+post.likes.length : 0; var commentsCount = (post &&
+Array.isArray(post.comments)) ? post.comments.length : 0; var authorImg =
+(author && author.profileimage) ? author.profileimage :
+'/images/defaultpic.png'; var authorName = (author && author.fullname) ?
+author.fullname : 'Unknown'; var authorUsername = (author && author.username) ?
+author.username : 'unknown'; var createdAt = (post && post.createdAt) ? new
+Date(post.createdAt) : null; var safePostId = (post && post._id) ? post._id :
+''; %>
 
 <!-- Page wrapper -->
 <main
@@ -19,12 +29,22 @@ post._id ? post._id : ''; %>
 	<!-- Top actions -->
 	<div class="mb-4 flex items-center justify-between gap-3 z-[-1]">
 		<a
-			href="javascript:history.back()"
-			class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5 transition focus-visible:ring-2 focus-visible:ring-white/20"
+			href="#"
+			onclick="history.back(); return false;"
+			class="inline-flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium bg-transparent border border-white/10 backdrop-blur-sm shadow-sm transition transform hover:bg-white/5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30"
 			aria-label="Go back">
-			<i
-				class="ri-arrow-left-line"
-				aria-hidden="true"></i>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="w-4 h-4 -ml-0.5"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true">
+				<path d="M15 18l-6-6 6-6"></path>
+			</svg>
 			<span>Back</span>
 		</a>
 
@@ -97,7 +117,7 @@ post._id ? post._id : ''; %>
 	<!-- Responsive 2-column layout -->
 	<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 		<!-- Left: Image -->
-		<section class="lg:col-span-7">
+		<section class="lg:col-span-6">
 			<div
 				id="modalImageWrap"
 				class="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-gradient-to-b from-white/3 to-transparent">
@@ -287,7 +307,7 @@ post._id ? post._id : ''; %>
 		</section>
 
 		<!-- Right: Info Panel -->
-		<aside class="lg:col-span-5 flex flex-col gap-6">
+		<aside class="lg:col-span-6 flex flex-col gap-6">
 			<!-- sticky header on large screens -->
 			<% function shuffleArray(arr) { const a = Array.isArray(arr) ? arr.slice()
 			: []; for (let i = a.length - 1; i > 0; i--) { const j =

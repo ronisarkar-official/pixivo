@@ -1,98 +1,212 @@
-<% include ./partials/header.ejs %> <% const safePosts = Array.isArray(posts) ?
-posts.slice() : []; for (let i = safePosts.length - 1; i > 0; i--) { const j =
-Math.floor(Math.random() * (i + 1)); [safePosts[i], safePosts[j]] =
-[safePosts[j], safePosts[i]]; } const BATCH_SIZE = 20; const firstBatch =
-safePosts.slice(0, BATCH_SIZE); const remaining = safePosts.slice(BATCH_SIZE);
-%>
+<%- include("./partials/header.ejs") %>
+<% const safePosts = Array.isArray(posts) ? posts.slice() : []; for (let i = safePosts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [safePosts[i], safePosts[j]] = [safePosts[j], safePosts[i]]; } %>
 
-<!-- Search Form (unchanged) -->
 <div class="mb-8 static z-0">
-	<div class="flex justify-center mt-4 static">
-		<form
-			action="/feed"
-			method="GET"
-			class="flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 w-full max-w-lg shadow-sm hover:shadow-md transition">
-			<i class="ri-search-line text-white/70 text-lg"></i>
-			<input
-				type="text"
-				name="q"
-				value="<%= typeof q !== 'undefined' ? q : '' %>"
-				placeholder="Search pins..."
-				class="flex-1 px-3 bg-transparent text-white placeholder-white/50 focus:outline-none" />
-		</form>
-	</div>
+  <div class="flex justify-center mt-4 static">
+    <form
+      action="/feed"
+      method="GET"
+      class="flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-2 w-full max-w-lg shadow-sm hover:shadow-md transition">
+      <i class="ri-search-line text-white/70 text-lg"></i>
+      <input
+        type="text"
+        name="q"
+        value="<%= typeof q !== 'undefined' ? q : '' %>"
+        placeholder="Search pins..."
+        class="flex-1 px-3 bg-transparent text-white placeholder-white/50 focus:outline-none" />
+    </form>
+  </div>
 
-	<% if (q) { %>
-	<p class="mt-2 text-gray-400 text-center">
-		Found <%= total %> <%= total === 1 ? 'result' : 'results' %> for "<%= q %>"
-	</p>
-	<% } %>
+  <% if (q) { %>
+  <p class="mt-2 text-gray-400 text-center">
+    Found <%= total %> <%= total === 1 ? 'result' : 'results' %> for "<%= q %>"
+  </p>
+  <% } %>
 </div>
 
 <div class="max-w-5xl mx-auto mt-10 px-4 sm:px-0">
-	<div
-		id="pinsColumn"
-		class="columns-2 gap-4 space-y-4 mt-6 sm:columns-3 lg:columns-4">
-		<% if (firstBatch.length > 0) { %> <% firstBatch.forEach((elem, idx) => { %>
-		<!-- Pin card (exact same layout & data attributes) -->
-		<a
-			href="/pin/<%= elem._id %>"
-			class="block break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300">
-			<div
-				class="break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300 cursor-pointer"
-				data-image="<%= elem.image %>"
-				data-title="<%= elem.imageTitle %>"
-				data-desc="<%= elem.imageDesc || '' %>"
-				data-index="<%= idx %>"
-				data-author-fullname="<%= (elem.author && elem.author.fullname) || (elem.user && elem.user.fullname) || 'Unknown' %>"
-				data-author-username="<%= (elem.author && elem.author.username) || (elem.user && elem.user.username) || '' %>"
-				data-author-image="<%= (elem.author && elem.author.profileimage) || (elem.user && elem.user.profileimage) || 'defaultpic.jpg' %>">
-				<img
-					src="<%= elem.image %>"
-					alt="<%= elem.imageTitle %>"
-					class="w-full object-cover rounded-2xl pin-img"
-					loading="lazy"
-					decoding="async" />
-				<% if (elem.imageTitle) { %>
-				<div class="p-3 text-sm text-white"><%= elem.imageTitle %></div>
-				<% } %>
-			</div>
-		</a>
-		<% }) %> <% } else { %>
-		<div class="col-span-full text-center py-8 md:py-0 px-4 md:px-0">
-			<h3 class="text-lg md:text-xl font-medium text-gray-500">
-				<% if (q) { %> No pins found for "<%= q %>" <% } else { %> No pins
-				available yet <% } %>
-			</h3>
-			<% if (q) { %>
-			<div class="mt-4 md:mt-3">
-				<a
-					href="/feed"
-					class="text-blue-500 hover:underline inline-block md:mr-[9.5rem]"
-					>View all pins</a
-				>
-			</div>
-			<% } %>
-		</div>
-		<% } %>
-	</div>
+  <div
+    id="pinsColumn"
+    class="columns-2 gap-4 space-y-4 mt-6 sm:columns-3 lg:columns-4"></div>
 
-	<!-- sentinel used to trigger loading more batches -->
-	<div
-		id="pinsSentinel"
-		class="h-8"></div>
+  <div
+    id="loadingIndicator"
+    class="hidden text-center py-8">
+    <div class="inline-flex items-center gap-2 text-white/60">
+      <div
+        class="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin"></div>
+      <span>Loading more pins...</span>
+    </div>
+  </div>
+
+  <div
+    id="endMessage"
+    class="hidden text-center py-8">
+    <p class="text-white/60">You've reached the end! 🎉</p>
+  </div>
+
+  <div
+    id="pinsSentinel"
+    class="h-8"></div>
 </div>
 
 <style>
-	/* purely visual fade-in for images: doesn't affect layout */
-	.pin-img {
-		transition: opacity 0.36s ease, transform 0.36s ease;
-		opacity: 0;
-		transform: translateZ(0);
-	}
-	.pin-img.loaded {
-		opacity: 1;
-	}
+  /* Render/perf-friendly pin card */
+  .pin-card {
+    content-visibility: auto; /* let browser skip rendering offscreen cards */
+    contain: layout style;    /* confine layout/repaint cost */
+    will-change: transform;
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  .pin-img {
+    transition: opacity 0.36s ease, transform 0.36s ease;
+    opacity: 0;
+    transform: translateZ(0);
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+  }
+  .pin-img.loaded {
+    opacity: 1;
+    transform: none;
+  }
 </style>
+
+<script>
+  // safe JSON embed (keep protection against "<")
+  <% const safeJson = JSON.stringify(safePosts).split('<').join('\\u003c'); %>
+  const allPosts = <%- safeJson %>;
+
+  let currentIndex = 0;
+  const BATCH_SIZE = 20; // smaller batch -> less jank, tune as needed
+  let isLoading = false;
+
+  const pinsColumn = document.getElementById('pinsColumn');
+  const loadingIndicator = document.getElementById('loadingIndicator');
+  const endMessage = document.getElementById('endMessage');
+  const sentinel = document.getElementById('pinsSentinel');
+
+  function escapeAttr(str) {
+    return String(str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function buildPinHTML(elem, idx) {
+    const authorFullname = (elem.author && elem.author.fullname) || (elem.user && elem.user.fullname) || 'Unknown';
+    const authorUsername = (elem.author && elem.author.username) || (elem.user && elem.user.username) || '';
+    const authorImage = (elem.author && elem.author.profileimage) || (elem.user && elem.user.profileimage) || '/images/defaultpic.jpg';
+    const safeSrc = elem.image ? String(elem.image).replace(/"/g, '&quot;') : '/images/defaultpic.jpg';
+    const title = escapeAttr(elem.imageTitle || '');
+    const desc = escapeAttr(elem.imageDesc || '');
+
+    // single container per pin with "pin-card" for content-visibility
+    return `
+      <a href="/pin/${elem._id}" class="block pin-card overflow-hidden rounded-2xl transition-shadow duration-300">
+        <div
+          class="break-inside-avoid overflow-hidden rounded-2xl transition-shadow duration-300 cursor-pointer"
+          data-image="${escapeAttr(elem.image || '')}"
+          data-title="${title}"
+          data-desc="${desc}"
+          data-index="${idx}"
+          data-author-fullname="${escapeAttr(authorFullname)}"
+          data-author-username="${escapeAttr(authorUsername)}"
+          data-author-image="${escapeAttr(authorImage)}">
+          <img
+            src="${safeSrc}"
+            alt="${title}"
+            class="w-full object-cover rounded-2xl pin-img"
+            loading="lazy"
+            decoding="async"
+            onload="this.classList.add('loaded')"
+            onerror="this.onerror=null; this.src='/images/defaultpic.jpg'; this.classList.add('loaded');" />
+          ${elem.imageTitle ? `<div class="p-3 text-sm text-white">${title}</div>` : ''}
+        </div>
+      </a>
+    `;
+  }
+
+  // Insert batch HTML once using a DocumentFragment created from a single string
+  function appendBatchHtml(batchArray, startIdx) {
+    if (!batchArray || batchArray.length === 0) return;
+    const htmlPieces = [];
+    for (let i = 0; i < batchArray.length; i++) {
+      htmlPieces.push(buildPinHTML(batchArray[i], startIdx + i));
+    }
+    const batchHtml = htmlPieces.join('');
+    // create a fragment efficiently and append once
+    const range = document.createRange();
+    range.selectNode(document.body);
+    const fragment = range.createContextualFragment(batchHtml);
+    pinsColumn.appendChild(fragment);
+  }
+
+  // schedule helper: use requestIdleCallback when possible to avoid main-thread jank
+  function scheduleWork(fn) {
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(fn, { timeout: 500 });
+    } else {
+      setTimeout(fn, 0);
+    }
+  }
+
+  function loadMorePosts() {
+    if (isLoading || currentIndex >= allPosts.length) return;
+    isLoading = true;
+    loadingIndicator.classList.remove('hidden');
+
+    scheduleWork(() => {
+      const nextBatch = allPosts.slice(currentIndex, currentIndex + BATCH_SIZE);
+      appendBatchHtml(nextBatch, currentIndex);
+
+      currentIndex += nextBatch.length;
+      loadingIndicator.classList.add('hidden');
+
+      if (currentIndex >= allPosts.length) {
+        endMessage.classList.remove('hidden');
+        if (observer && sentinel) observer.unobserve(sentinel);
+      }
+      isLoading = false;
+    });
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting && !isLoading) {
+        loadMorePosts();
+      }
+    }
+  }, { rootMargin: '300px' }); // larger margin to load earlier for smoother UX
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!allPosts || allPosts.length === 0) {
+      const q = '<%= typeof q !== "undefined" ? q : "" %>';
+      pinsColumn.innerHTML = `
+        <div class="col-span-full text-center py-8 md:py-0 px-4 md:px-0">
+          <h3 class="text-lg md:text-xl font-medium text-gray-500">
+            ${q ? `No pins found for "${escapeHtml(q)}"` : 'No pins available yet'}
+          </h3>
+          ${q ? `
+            <div class="mt-4 md:mt-3">
+              <a href="/feed" class="text-blue-500 hover:underline inline-block">View all pins</a>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      return;
+    }
+
+    // kick off first batch synchronously (keeps perceived load fast)
+    loadMorePosts();
+    if (sentinel) observer.observe(sentinel);
+  });
+
+  // small safe HTML-escape helper used only in the DOM message above
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+
 <script src="/javascripts/feed.js"></script>
-<% include ./partials/footer.ejs %>
+<%- include("./partials/footer.ejs") %>

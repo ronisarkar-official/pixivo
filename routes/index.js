@@ -22,7 +22,7 @@ function timeAgo(d) {
 		u = { y: 31536000, mo: 2592000, w: 604800, d: 86400, h: 3600, m: 60, s: 1 };
 	for (let k in u) {
 		let v = Math.floor(s / u[k]);
-		if (v) return v + k ;
+		if (v) return v + k;
 	}
 	return 'just now';
 }
@@ -51,13 +51,13 @@ function isLoggedIn(req, res, next) {
 
 function isNotLoggedIn(req, res, next) {
 	if (!req.isAuthenticated()) return next();
-	res.redirect('/feed'); // or '/feed' depending on where you want to redirect them
+	res.redirect('/feed');
 }
 
 function escapeRegExp(string = '') {
-	// escape regex special chars to avoid ReDoS & injection-like surprises
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
 // ===== Routes =====
 
 // Auth Pages
@@ -67,45 +67,82 @@ router.get(['/', '/login'], isNotLoggedIn, (req, res) => {
 	});
 });
 
-// Feed Page
+// Feed Page with Pagination Support
 router.get('/feed', isLoggedIn, async (req, res) => {
-	const user = await userModel.findOne({ username: req.user.username });
+	try {
+		const user = await userModel.findOne({ username: req.user.username });
+		const q = req.query.q || '';
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 50; // Increased default limit
+		const skip = (page - 1) * limit;
 
-	const q = req.query.q || ''; // search query from ?q=
-	let filter = {};
+		let filter = {};
+		if (q) {
+			filter = {
+				$or: [
+					{ imageTitle: new RegExp(escapeRegExp(q), 'i') },
+					{ imageDesc: new RegExp(escapeRegExp(q), 'i') },
+				],
+			};
+		}
 
-	if (q) {
-		filter = {
-			$or: [
-				{ imageTitle: new RegExp(q, 'i') },
-				{ imageDesc: new RegExp(q, 'i') },
-			],
-		};
+		const totalPosts = await postModel.countDocuments(filter);
+		const posts = await postModel
+			.find(filter)
+			.populate('user')
+			.sort({ createdAt: -1 }) // Sort by newest first
+			.skip(skip)
+			.limit(limit);
+
+		// For AJAX requests (infinite scroll), send JSON
+		if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest') {
+			return res.json({
+				success: true,
+				posts,
+				pagination: {
+					currentPage: page,
+					totalPages: Math.ceil(totalPosts / limit),
+					hasNextPage: page < Math.ceil(totalPosts / limit),
+					totalPosts,
+				},
+			});
+		}
+
+		res.render('feed', {
+			user,
+			posts,
+			q,
+			total: totalPosts,
+			pagination: {
+				currentPage: page,
+				totalPages: Math.ceil(totalPosts / limit),
+				hasNextPage: page < Math.ceil(totalPosts / limit),
+			},
+		});
+	} catch (err) {
+		console.error('Feed error:', err);
+		res.status(500).send('Server error');
 	}
-
-	const posts = await postModel.find(filter).populate('user');
-
-	res.render('feed', {
-		user,
-		posts,
-		q, // pass q to template
-		total: posts.length, // pass total count
-	});
 });
 
-// Single Post Page
+// Single Post Page - FIXED: Remove limit on related posts
 router.get('/pin/:id', isLoggedIn, async (req, res) => {
 	try {
 		const postId = req.params.id;
 		const post = await postModel
 			.findById(postId)
 			.populate('user', 'username fullname profileimage')
-			.populate('comments.user', 'username fullname profileimage'); // <- important
+			.populate('comments.user', 'username fullname profileimage');
 
 		if (!post) return res.status(404).send('Post not found');
 
 		const user = await userModel.findOne({ username: req.user.username });
-		const posts = await postModel.find().limit(20);
+
+		// FIXED: Remove .limit(20) to show all posts as related posts
+		const posts = await postModel
+			.find({ _id: { $ne: postId } }) // Exclude current post
+			.populate('user', 'username fullname profileimage')
+			.sort({ createdAt: -1 }); // Sort by newest first
 
 		res.render('post', { user, post, posts, timeAgo });
 	} catch (err) {
@@ -120,14 +157,16 @@ router.post('/posts/:id/like', isLoggedIn, async (req, res) => {
 		const postId = req.params.id;
 		const userId = req.user._id;
 
-		// use postModel (the model you required at top)
 		const post = await postModel.findById(postId);
 		if (!post) return res.status(404).json({ error: 'Post not found' });
 
 		const alreadyLiked = post.likes.includes(userId);
 
-		if (alreadyLiked) post.likes.pull(userId);
-		else post.likes.push(userId);
+		if (alreadyLiked) {
+			post.likes.pull(userId);
+		} else {
+			post.likes.push(userId);
+		}
 
 		await post.save();
 
@@ -143,20 +182,18 @@ router.post('/posts/:id/like', isLoggedIn, async (req, res) => {
 });
 
 // Add comment to a post
-// Add a comment — POST /posts/:id/comments
 router.post('/posts/:id/comments', isLoggedIn, async (req, res) => {
 	try {
 		const post = await postModel.findById(req.params.id);
 		if (!post) return res.status(404).json({ error: 'Post not found' });
 
-		// validate
 		const text = (req.body.text || '').trim();
 		if (!text) return res.status(400).json({ error: 'Comment text required' });
 
 		post.comments.push({ text, user: req.user._id });
 		await post.save();
 
-		// re-populate the last comment's user data
+		// Re-populate the last comment's user data
 		const populated = await postModel
 			.findById(post._id)
 			.populate('comments.user', 'username fullname profileimage');
@@ -173,7 +210,7 @@ router.post('/posts/:id/comments', isLoggedIn, async (req, res) => {
 // Profile Page
 router.get('/profile', isLoggedIn, async (req, res) => {
 	try {
-		const username = req.session.passport.user; // get username from URL
+		const username = req.session.passport.user;
 		const user = await userModel.findOne({ username }).populate('posts');
 
 		if (!user) {
@@ -187,33 +224,67 @@ router.get('/profile', isLoggedIn, async (req, res) => {
 	}
 });
 
+// All Pins Page - Show user's posts with pagination
 router.get('/allpins', isLoggedIn, async (req, res) => {
-	const user = await userModel
-		.findOne({ username: req.user.username })
-		.populate('posts');
+	try {
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 20;
+		const skip = (page - 1) * limit;
 
-	res.render('pins', { user });
+		const user = await userModel.findOne({ username: req.user.username });
+
+		// Get user's posts with pagination
+		const totalPosts = await postModel.countDocuments({ user: user._id });
+		const posts = await postModel
+			.find({ user: user._id })
+			.sort({ createdAt: -1 })
+			.skip(skip)
+			.limit(limit);
+
+		// For AJAX requests
+		if (req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest') {
+			return res.json({
+				success: true,
+				posts,
+				pagination: {
+					currentPage: page,
+					totalPages: Math.ceil(totalPosts / limit),
+					hasNextPage: page < Math.ceil(totalPosts / limit),
+					totalPosts,
+				},
+			});
+		}
+
+		// Set posts directly on user object for template compatibility
+		user.posts = posts;
+
+		res.render('pins', {
+			user,
+			pagination: {
+				currentPage: page,
+				totalPages: Math.ceil(totalPosts / limit),
+				hasNextPage: page < Math.ceil(totalPosts / limit),
+				totalPosts,
+			},
+		});
+	} catch (err) {
+		console.error('All pins error:', err);
+		res.status(500).send('Server error');
+	}
 });
 
+// File upload routes remain the same
 router.post(
 	'/fileupload',
 	isLoggedIn,
-	upload.single('image'), // This stays the same
+	upload.single('image'),
 	async (req, res) => {
 		try {
 			const user = await userModel.findOne({
 				username: req.session.passport.user,
 			});
 
-			// Cloudinary provides different properties in req.file
-			user.profileimage = req.file.path; // Use path instead of filename
-			// OR store the entire Cloudinary object if you need more flexibility:
-			// user.profileimage = {
-			//   url: req.file.path,
-			//   publicId: req.file.filename,
-			//   secureUrl: req.file.secure_url
-			// };
-
+			user.profileimage = req.file.path;
 			await user.save();
 			res.redirect('/profile');
 		} catch (err) {
@@ -230,7 +301,7 @@ router.post('/upload', isLoggedIn, upload.single('file'), async (req, res) => {
 	try {
 		const user = await userModel.findOne({ username: req.user.username });
 		const post = await postModel.create({
-			image: req.file.path, // Store just the URL string
+			image: req.file.path,
 			imageTitle: req.body.filetitle,
 			imageDesc: req.body.filecaption,
 			user: user._id,
@@ -248,11 +319,11 @@ router.post('/upload', isLoggedIn, upload.single('file'), async (req, res) => {
 				.catch((cleanupErr) => console.error('Cleanup failed:', cleanupErr));
 		}
 		req.flash('error', 'Failed to upload post');
-		res.redirect('/upload');
+		res.redirect('/profile');
 	}
 });
 
-// Register
+// Auth routes remain the same
 router.post('/register', authLimiter, async (req, res) => {
 	const errors = validationResult(req);
 	if (!errors.isEmpty()) {
@@ -265,7 +336,6 @@ router.post('/register', authLimiter, async (req, res) => {
 		const userData = new userModel({ username, email, fullname });
 
 		await userModel.register(userData, password);
-
 		passport.authenticate('local')(req, res, () => res.redirect('/feed'));
 	} catch (err) {
 		console.error('Registration failed:', err);
@@ -274,7 +344,6 @@ router.post('/register', authLimiter, async (req, res) => {
 	}
 });
 
-// Login
 router.post(
 	'/login',
 	authLimiter,
@@ -285,7 +354,6 @@ router.post(
 	}),
 );
 
-// Logout
 router.get('/logout', (req, res, next) => {
 	req.logout((err) => {
 		if (err) return next(err);

@@ -1,16 +1,15 @@
-<%- include('partials/header', { user: viewer || {} }) %>
-<% if (viewer && viewer.username === profileUser.username) { %>
-  <script>
-    window.location.href = "/profile";
-  </script>
+<%- include('partials/header', { user: viewer || {} }) %> <% if (viewer &&
+viewer.username === profileUser.username) { %>
+<script>
+	window.location.href = '/profile';
+</script>
 <% } else { %>
-  <!-- rest of your profile page code -->
+<!-- rest of your profile page code -->
 
-
-<main class="min-h-screen ">
+<main class="min-h-screen">
 	<section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 		<!-- Top: Instagram-like profile header -->
-		 <a
+		<a
 			href="#"
 			onclick="history.back(); return false;"
 			class="inline-flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium bg-transparent border border-white/10 backdrop-blur-sm shadow-sm transition transform hover:bg-white/5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30 mb-4"
@@ -75,10 +74,8 @@
 				</div>
 
 				<div class="ml-auto flex items-center gap-3 w-full sm:w-auto">
-					<% if (viewer && viewer.username === profileUser.username) { %>
-					
-					>
-					<% } else if (viewer) { %> <% const isFollowing = viewer &&
+					<% if (viewer && viewer.username === profileUser.username) { %> > <% }
+					else if (viewer) { %> <% const isFollowing = viewer &&
 					viewer.following && Array.isArray(viewer.following) ?
 					viewer.following.some(f => String(f) === String(profileUser._id)) :
 					false; const followersCount = profileUser.followersCount ||
@@ -92,7 +89,6 @@
 						<span id="followLabel"
 							><%= isFollowing ? 'Unfollow' : 'Follow' %></span
 						>
-						
 					</button>
 
 					<% } else { %>
@@ -106,36 +102,54 @@
 			</div>
 
 			<!-- Mobile bio / stats under header for small screens -->
-			<div class="sm:hidden mt-4">
-				<% if (profileUser.bio) { %>
-				<p class="text-sm text-gray-700"><%= profileUser.bio %></p>
-				<% } %>
+			<!-- Mobile-only profile info (visible on xs, hidden on sm+) -->
+			<div class="block sm:hidden mt-4">
+				<% // defensive helpers (avoid accessing properties of undefined) const
+				fullname = profileUser && profileUser.fullname ? profileUser.fullname :
+				(profileUser && profileUser.username ? profileUser.username : 'User');
+				const username = profileUser && profileUser.username ?
+				profileUser.username : 'user'; const postsCount = (profileUser && typeof
+				profileUser.postsCount !== 'undefined') ? profileUser.postsCount :
+				(Array.isArray(posts) ? posts.length : 0); const followersCount =
+				(profileUser && typeof profileUser.followersCount !== 'undefined') ?
+				profileUser.followersCount : (profileUser &&
+				Array.isArray(profileUser.followers) ? profileUser.followers.length :
+				0); const followingCount = (profileUser && typeof
+				profileUser.followingCount !== 'undefined') ? profileUser.followingCount
+				: (profileUser && Array.isArray(profileUser.following) ?
+				profileUser.following.length : 0); %>
 
-				<div class="mt-3 flex items-center gap-6 text-sm text-gray-700">
-					<div
-						><span class="font-semibold text-gray-900"
-							><%= profileUser.postsCount || (posts ? posts.length : 0) %></span
+				<!-- Name / username -->
+				<p
+					class="text-sm font-semibold text-gray-50 truncate max-w-full"
+					title="<%= fullname %>">
+					<%= fullname %>
+				</p>
+				<p class="text-sm text-gray-300">@<%= username %></p>
+
+				<!-- Stats: responsive & non-clipping -->
+				<div class="mt-3 flex flex-wrap items-center gap-4 text-sm">
+					<div class="flex items-center gap-2 min-w-0">
+						<span class="font-semibold text-gray-50"><%= postsCount %></span>
+						<span class="text-gray-300">posts</span>
+					</div>
+
+					<div class="flex items-center gap-2 min-w-0">
+						<span class="font-semibold text-gray-50"
+							><%= followersCount %></span
 						>
-						posts</div
-					>
-					<div
-						><span class="font-semibold text-gray-900"
-							><%= profileUser.followersCount || (profileUser.followers ?
-							profileUser.followers.length : 0) %></span
+						<span class="text-gray-300">followers</span>
+					</div>
+
+					<div class="flex items-center gap-2 min-w-0">
+						<span class="font-semibold text-gray-50"
+							><%= followingCount %></span
 						>
-						followers</div
-					>
-					<div
-						><span class="font-semibold text-gray-900"
-							><%= profileUser.followingCount || (profileUser.following ?
-							profileUser.following.length : 0) %></span
-						>
-						following</div
-					>
+						<span class="text-gray-300">following</span>
+					</div>
 				</div>
 			</div>
 		</div>
-
 
 		<!-- Pinterest-style masonry feed -->
 		<section class="mt-8">
@@ -143,29 +157,31 @@
 
 			<div
 				id="postsContainer"
-				class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+				class="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
 				<% if (posts && posts.length > 0) { %> <% posts.forEach(function(p){ %>
-				<article
-					class="break-inside-avoid bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
-					<a href="/pin/<%= p._id %>">
-						
-					<% if (p.image) { %>
-					<img
-						src="<%= p.image %>"
-						alt="<%= p.imageTitle || 'post image' %>"
-						class="w-full object-cover"
-						style="max-height: 700px" />
-					<% } %>
-
-					<div class="">
-						<div class="flex items-start gap-3">
-							<div class="flex-1"> </div>
-
-							
-					</div> </article
-				><% if (p.imageTitle) { %>
-				<h4 class="mt-2 font-medium text-gray-50"><%= p.imageTitle %></h4>
-				<% } %></a> <% }) %> <% } else { %>
+				<article class="break-inside-avoid mb-4">
+					<a
+						href="/pin/<%= p._id %>"
+						class="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+						<% if (p.image) { %>
+						<img
+							src="<%= p.image %>"
+							alt="<%= p.imageTitle || 'post image' %>"
+							class="w-full object-cover"
+							style="max-height: 700px" />
+						<% } else { %>
+						<div
+							class="w-full bg-gray-100 aspect-video flex items-center justify-center text-gray-400"
+							>No image</div
+						>
+						<% } %> </a
+					><div class="">
+						<% if (p.imageTitle) { %>
+						<h4 class="mt-3 font-medium text-gray-50"><%= p.imageTitle %></h4>
+						<% } %>
+					</div>
+				</article>
+				<% }) %> <% } else { %>
 				<div class="bg-white rounded-2xl p-6 shadow-sm text-gray-600"
 					>No posts yet.</div
 				>
@@ -185,5 +201,4 @@
 	</section>
 </main>
 
-<%- include('partials/footer') %>
-<% } %>
+<%- include('partials/footer') %> <% } %>

@@ -6,7 +6,7 @@ const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-
+const { Types } = require('mongoose');
 const userModel = require('./users');
 const postModel = require('./posts');
 const cloudinary = require('cloudinary').v2;
@@ -17,12 +17,20 @@ passport.use(new LocalStrategy(userModel.authenticate()));
 passport.serializeUser(userModel.serializeUser());
 passport.deserializeUser(userModel.deserializeUser());
 
-function timeAgo(d) {
-	let s = Math.floor((Date.now() - new Date(d)) / 1000),
-		u = { y: 31536000, mo: 2592000, w: 604800, d: 86400, h: 3600, m: 60, s: 1 };
-	for (let k in u) {
-		let v = Math.floor(s / u[k]);
-		if (v) return v + k;
+function timeAgo(date) {
+	const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
+	const intervals = [
+		['y', 31536000],
+		['mo', 2592000],
+		['w', 604800],
+		['d', 86400],
+		['h', 3600],
+		['m', 60],
+		['s', 1],
+	];
+	for (const [label, sec] of intervals) {
+		const val = Math.floor(seconds / sec);
+		if (val > 0) return `${val} ${label}${val > 1 ? '' : ''}`;
 	}
 	return 'just now';
 }
@@ -160,7 +168,7 @@ router.post('/posts/:id/like', isLoggedIn, async (req, res) => {
 		const post = await postModel.findById(postId);
 		if (!post) return res.status(404).json({ error: 'Post not found' });
 
-		const alreadyLiked = post.likes.includes(userId);
+		const alreadyLiked = post.likes.some((id) => id.equals(userId));
 
 		if (alreadyLiked) {
 			post.likes.pull(userId);
@@ -360,5 +368,198 @@ router.get('/logout', (req, res, next) => {
 		res.redirect('/');
 	});
 });
+
+
+
+
+
+// Public profile view (everyone)
+router.get('/user/:username', async (req, res) => {
+  try {
+    const rawUsername = req.params.username || '';
+    const username = String(rawUsername).trim();
+
+    if (!/^[\w.-]{3,30}$/.test(username)) {
+      return res.status(400).render('404', { message: 'Invalid username' });
+    }
+
+    // Select public fields + followers (for count). Avoid selecting sensitive fields.
+    const profileUser = await userModel
+      .findOne({ username })
+      .select('username fullname profileimage bio createdAt followers') // include followers for count
+      .lean();
+
+    if (!profileUser) {
+      return res.status(404).render('404', { message: 'User not found' });
+    }
+
+    // Pagination for this user's posts
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const rawLimit = parseInt(req.query.limit, 10) || 20;
+    const MAX_LIMIT = 50;
+    const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT);
+    const skip = (page - 1) * limit;
+
+    const [totalPosts, posts] = await Promise.all([
+      postModel.countDocuments({ user: profileUser._id }),
+      postModel
+        .find({ user: profileUser._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('user', 'username fullname profileimage')
+        .lean(),
+    ]);
+
+    const pagination = {
+      currentPage: page,
+      totalPages: Math.ceil(totalPosts / limit),
+      hasNextPage: page < Math.ceil(totalPosts / limit),
+      totalPosts,
+    };
+
+    // If AJAX / API request, return JSON
+    const wantsJson =
+      req.get('x-requested-with') === 'XMLHttpRequest' ||
+      (req.get('accept') || '').includes('application/json');
+
+    if (wantsJson) {
+      // include follower count
+      const followersCount = Array.isArray(profileUser.followers) ? profileUser.followers.length : 0;
+      return res.json({ success: true, user: profileUser, posts, pagination, followersCount });
+    }
+
+    // If viewer is logged in, fetch just the following array to check follow-state
+    let viewer = null;
+    if (req.user && Types.ObjectId.isValid(req.user._id)) {
+      viewer = await userModel
+				.findById(req.user._id)
+				.select('username following profileimage fullname email ')
+				.lean();
+    }
+
+    // derive followersCount for template convenience
+    profileUser.followersCount = Array.isArray(profileUser.followers) ? profileUser.followers.length : 0;
+
+    res.render('user_profile', {
+      profileUser,
+      posts,
+      pagination,
+      viewer: viewer || null,
+      timeAgo,
+    });
+  } catch (err) {
+    console.error('Public profile error:', err);
+    res.status(500).send('Server error');
+  }
+});
+
+// Optional: API-only endpoint to fetch more posts for infinite scroll
+router.get('/user/:username/posts', async (req, res) => {
+  try {
+    const username = String(req.params.username || '').trim();
+    if (!/^[\w.-]{3,30}$/.test(username)) return res.status(400).json({ error: 'Invalid username' });
+
+    const user = await userModel.findOne({ username }).select('_id').lean();
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const rawLimit = parseInt(req.query.limit, 10) || 20;
+    const MAX_LIMIT = 50;
+    const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT);
+    const skip = (page - 1) * limit;
+
+    const [totalPosts, posts] = await Promise.all([
+      postModel.countDocuments({ user: user._id }),
+      postModel
+        .find({ user: user._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('user', 'username fullname profileimage')
+        .lean(),
+    ]);
+
+    const pagination = { currentPage: page, totalPages: Math.ceil(totalPosts / limit), hasNextPage: page < Math.ceil(totalPosts / limit), totalPosts };
+
+    res.json({ success: true, posts, pagination });
+  } catch (err) {
+    console.error('User posts API error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+
+// rate limiter for follow API
+const followLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // max 10 follow/unfollow attempts per minute per IP
+  message: { error: 'Too many follow actions. Try again soon.' },
+});
+
+// Toggle follow/unfollow (robust version)
+router.post('/users/:username/follow', isLoggedIn, followLimiter, async (req, res) => {
+  try {
+    const targetUsername = String(req.params.username || '').trim();
+    if (!/^[\w.-]{3,30}$/.test(targetUsername)) {
+      return res.status(400).json({ error: 'Invalid username' });
+    }
+
+    if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+
+    if (req.user.username === targetUsername) {
+      return res.status(400).json({ error: 'Cannot follow yourself' });
+    }
+
+    // Find only necessary fields
+    const target = await userModel.findOne({ username: targetUsername }).select('_id followers').exec();
+    if (!target) return res.status(404).json({ error: 'User not found' });
+
+    const meId = req.user._id; // may be ObjectId or string; normalize when comparing
+
+    // Normalize comparisons to strings to avoid .equals errors when items are plain strings
+    const alreadyFollowing = Array.isArray(target.followers)
+      ? target.followers.some(f => String(f) === String(meId))
+      : false;
+
+    if (alreadyFollowing) {
+      // Unfollow: atomically remove follower and update my following
+      const updatedTarget = await userModel.findByIdAndUpdate(
+        target._id,
+        { $pull: { followers: meId } },
+        { new: true, select: 'followers' }
+      ).exec();
+
+      await userModel.findByIdAndUpdate(
+        meId,
+        { $pull: { following: target._id } }
+      ).exec();
+
+      const followersCount = Array.isArray(updatedTarget && updatedTarget.followers) ? updatedTarget.followers.length : 0;
+      return res.json({ success: true, following: false, followersCount });
+    } else {
+      // Follow: atomically add follower and update my following
+      const updatedTarget = await userModel.findByIdAndUpdate(
+        target._id,
+        { $addToSet: { followers: meId } },
+        { new: true, select: 'followers' }
+      ).exec();
+
+      await userModel.findByIdAndUpdate(
+        meId,
+        { $addToSet: { following: target._id } }
+      ).exec();
+
+      const followersCount = Array.isArray(updatedTarget && updatedTarget.followers) ? updatedTarget.followers.length : 0;
+      return res.json({ success: true, following: true, followersCount });
+    }
+  } catch (err) {
+    console.error('Follow/unfollow error:', err);
+    // include minimal error detail for debugging (do NOT expose stack in production)
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 module.exports = router;

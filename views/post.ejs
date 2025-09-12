@@ -168,16 +168,17 @@ var safePostId = (post && post._id) ? post._id : '';
 				<!-- Author info -->
 				<header class="p-2">
 					<div class="flex items-center justify-between gap-4">
-						<div class="flex items-center gap-3">
+			<a href="/user/<%= authorUsername %>"><div class="flex items-center gap-3">
 							<img
 								src="<%= authorImg %>"
 								alt="Author avatar"
-								class="w-12 h-12 rounded-full object-cover border border-white/10" />
+								class="w-12 h-12 rounded-full object-cover " />
 							<div>
 								<div class="font-semibold text-sm leading-tight"><%= authorName %></div>
 								<div class="text-xs text-white/70 leading-tight">@<%= authorUsername %></div>
 							</div>
 						</div>
+					</a>
 					</div>
 				</header>
 

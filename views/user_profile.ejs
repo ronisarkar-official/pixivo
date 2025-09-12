@@ -1,0 +1,189 @@
+<%- include('partials/header', { user: viewer || {} }) %>
+<% if (viewer && viewer.username === profileUser.username) { %>
+  <script>
+    window.location.href = "/profile";
+  </script>
+<% } else { %>
+  <!-- rest of your profile page code -->
+
+
+<main class="min-h-screen ">
+	<section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+		<!-- Top: Instagram-like profile header -->
+		 <a
+			href="#"
+			onclick="history.back(); return false;"
+			class="inline-flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium bg-transparent border border-white/10 backdrop-blur-sm shadow-sm transition transform hover:bg-white/5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/30 mb-4"
+			aria-label="Go back">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="w-4 h-4 -ml-0.5"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true">
+				<path d="M15 18l-6-6 6-6"></path>
+			</svg>
+			<span>Back</span>
+		</a>
+		<div class="bg-[#1e2939] rounded-2xl p-6 shadow-sm">
+			<div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+				<div class="flex items-center gap-6">
+					<img
+						src="<%= profileUser.profileimage || '/images/defaultpic.png' %>"
+						alt="<%= profileUser.username %> avatar"
+						class="w-28 h-28 rounded-full object-cover ring-2 ring-gray-100" />
+
+					<div class="hidden sm:block">
+						<h1 class="text-2xl font-semibold text-gray-50"
+							><%= profileUser.fullname || profileUser.username %></h1
+						>
+						<p class="text-sm text-gray-50">@<%= profileUser.username %></p>
+						<% if (profileUser.bio) { %>
+						<p class="mt-2 text-sm text-gray-50 max-w-xl"
+							><%= profileUser.bio %></p
+						>
+						<% } %>
+
+						<div class="mt-3 flex items-center gap-6 text-sm text-gray-50">
+							<div
+								><span class="font-semibold text-gray-50"
+									><%= profileUser.postsCount || (posts ? posts.length : 0)
+									%></span
+								>
+								posts</div
+							>
+							<div
+								><span class="font-semibold text-gray-50"
+									><%= profileUser.followersCount || (profileUser.followers ?
+									profileUser.followers.length : 0) %></span
+								>
+								followers</div
+							>
+							<div
+								><span class="font-semibold text-gray-50"
+									><%= profileUser.followingCount || (profileUser.following ?
+									profileUser.following.length : 0) %></span
+								>
+								following</div
+							>
+						</div>
+					</div>
+				</div>
+
+				<div class="ml-auto flex items-center gap-3 w-full sm:w-auto">
+					<% if (viewer && viewer.username === profileUser.username) { %>
+					
+					>
+					<% } else if (viewer) { %> <% const isFollowing = viewer &&
+					viewer.following && Array.isArray(viewer.following) ?
+					viewer.following.some(f => String(f) === String(profileUser._id)) :
+					false; const followersCount = profileUser.followersCount ||
+					(profileUser.followers ? profileUser.followers.length : 0); %>
+
+					<button
+						id="followBtn"
+						class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+						data-username="<%= profileUser.username %>"
+						data-following="<%= isFollowing ? 'true' : 'false' %>">
+						<span id="followLabel"
+							><%= isFollowing ? 'Unfollow' : 'Follow' %></span
+						>
+						
+					</button>
+
+					<% } else { %>
+					<a
+						href="/login"
+						class="px-4 py-2 rounded-md border border-gray-200 text-sm font-medium"
+						>Log in</a
+					>
+					<% } %>
+				</div>
+			</div>
+
+			<!-- Mobile bio / stats under header for small screens -->
+			<div class="sm:hidden mt-4">
+				<% if (profileUser.bio) { %>
+				<p class="text-sm text-gray-700"><%= profileUser.bio %></p>
+				<% } %>
+
+				<div class="mt-3 flex items-center gap-6 text-sm text-gray-700">
+					<div
+						><span class="font-semibold text-gray-900"
+							><%= profileUser.postsCount || (posts ? posts.length : 0) %></span
+						>
+						posts</div
+					>
+					<div
+						><span class="font-semibold text-gray-900"
+							><%= profileUser.followersCount || (profileUser.followers ?
+							profileUser.followers.length : 0) %></span
+						>
+						followers</div
+					>
+					<div
+						><span class="font-semibold text-gray-900"
+							><%= profileUser.followingCount || (profileUser.following ?
+							profileUser.following.length : 0) %></span
+						>
+						following</div
+					>
+				</div>
+			</div>
+		</div>
+
+
+		<!-- Pinterest-style masonry feed -->
+		<section class="mt-8">
+			<h3 class="text-sm font-semibold text-gray-900 mb-3">Pins</h3>
+
+			<div
+				id="postsContainer"
+				class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+				<% if (posts && posts.length > 0) { %> <% posts.forEach(function(p){ %>
+				<article
+					class="break-inside-avoid bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+					<a href="/pin/<%= p._id %>">
+						
+					<% if (p.image) { %>
+					<img
+						src="<%= p.image %>"
+						alt="<%= p.imageTitle || 'post image' %>"
+						class="w-full object-cover"
+						style="max-height: 700px" />
+					<% } %>
+
+					<div class="">
+						<div class="flex items-start gap-3">
+							<div class="flex-1"> </div>
+
+							
+					</div> </article
+				><% if (p.imageTitle) { %>
+				<h4 class="mt-2 font-medium text-gray-50"><%= p.imageTitle %></h4>
+				<% } %></a> <% }) %> <% } else { %>
+				<div class="bg-white rounded-2xl p-6 shadow-sm text-gray-600"
+					>No posts yet.</div
+				>
+				<% } %>
+			</div>
+
+			<% if (pagination && pagination.hasNextPage) { %>
+			<div class="text-center mt-6">
+				<button
+					id="loadMoreBtn"
+					class="inline-flex items-center px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm"
+					>Load more</button
+				>
+			</div>
+			<% } %>
+		</section>
+	</section>
+</main>
+
+<%- include('partials/footer') %>
+<% } %>

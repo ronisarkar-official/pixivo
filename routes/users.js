@@ -1,6 +1,6 @@
+// models/User.js
 require('dotenv').config();
 const plm = require('passport-local-mongoose');
-
 const mongoose = require('mongoose');
 
 mongoose
@@ -10,21 +10,9 @@ mongoose
 
 const userSchema = new mongoose.Schema(
 	{
-		username: {
-			type: String,
-			required: true,
-			unique: true,
-			trim: true,
-		},
-		posts: [
-			{
-				type: mongoose.Schema.Types.ObjectId,
-				ref: 'Post',
-			},
-		],
-		profileimage: {
-			type: String,
-		},
+		username: { type: String, required: true, unique: true, trim: true },
+		posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
+		profileimage: { type: String },
 		email: {
 			type: String,
 			required: true,
@@ -32,15 +20,16 @@ const userSchema = new mongoose.Schema(
 			lowercase: true,
 			trim: true,
 		},
-		boards: {
-			type: Array,
-			default: [],
-		},
-		fullname: {
-			type: String,
-			required: true,
-			trim: true,
-		},
+		boards: { type: Array, default: [] },
+		fullname: { type: String, required: true, trim: true },
+
+		// NEW: followers / following
+		followers: [
+			{ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: [] },
+		],
+		following: [
+			{ type: mongoose.Schema.Types.ObjectId, ref: 'User', default: [] },
+		],
 	},
 	{ timestamps: true },
 );

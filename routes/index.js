@@ -133,10 +133,12 @@ router.get('/feed', isLoggedIn, async (req, res) => {
 	}
 });
 
-// Single Post Page - FIXED: Remove limit on related posts
+// Single Post Page - show all related posts and pass isFollowing + author fields to template
 router.get('/pin/:id', isLoggedIn, async (req, res) => {
 	try {
 		const postId = req.params.id;
+
+		// load post + author + comment authors
 		const post = await postModel
 			.findById(postId)
 			.populate('user', 'username fullname profileimage')
@@ -144,15 +146,74 @@ router.get('/pin/:id', isLoggedIn, async (req, res) => {
 
 		if (!post) return res.status(404).send('Post not found');
 
-		const user = await userModel.findOne({ username: req.user.username });
+		// load current user doc (to check following)
+		const user = await userModel
+			.findOne({ username: req.user.username })
+			.lean();
+		const isOwner = !!(
+			req.user && String(req.user.username) === String(post.user.username)
+		);
 
-		// FIXED: Remove .limit(20) to show all posts as related posts
+		// Determine isFollowing robustly for multiple common schemas:
+		// - user.following: array of ObjectId references to users
+		// - user.followingUsernames: array of usernames (less common)
+		// - post author having followers array (fallback)
+		let isFollowing = false;
+		try {
+			if (user) {
+				// case: following is an array of ObjectId refs
+				if (Array.isArray(user.following) && user.following.length) {
+					isFollowing = user.following.some(
+						(f) => String(f) === String(post.user._id),
+					);
+				}
+				// case: following stored as usernames
+				else if (
+					Array.isArray(user.followingUsernames) &&
+					user.followingUsernames.length
+				) {
+					isFollowing = user.followingUsernames.includes(post.user.username);
+				}
+				// fallback: check whether the post author lists current user in their followers array
+				else {
+					const authorHasFollower = await userModel
+						.findOne({
+							_id: post.user._id,
+							followers: user._id,
+						})
+						.lean();
+					isFollowing = !!authorHasFollower;
+				}
+			}
+		} catch (checkErr) {
+			// If your schema is different, avoid crashing — log and default to false
+			console.warn('isFollowing check failed, defaulting to false:', checkErr);
+			isFollowing = false;
+		}
+
+		// related posts (exclude current post) - no limit
 		const posts = await postModel
-			.find({ _id: { $ne: postId } }) // Exclude current post
+			.find({ _id: { $ne: postId } })
 			.populate('user', 'username fullname profileimage')
-			.sort({ createdAt: -1 }); // Sort by newest first
+			.sort({ createdAt: -1 });
 
-		res.render('post', { user, post, posts, timeAgo });
+		// Optional CSRF token support if you use csurf
+		const csrfToken =
+			typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+
+		// Pass everything the template expects (author* fields + isFollowing)
+		res.render('post', {
+			user, // current logged-in user (lean)
+			post,
+			posts,
+			timeAgo,
+			isFollowing,
+			isOwner,
+			authorUsername: post.user.username,
+			authorImg: post.user.profileimage,
+			authorName: post.user.fullname,
+			csrfToken,
+		});
 	} catch (err) {
 		console.error('Error fetching post:', err);
 		res.status(500).send('Server error');
@@ -225,7 +286,11 @@ router.get('/profile', isLoggedIn, async (req, res) => {
 			return res.status(404).send('User not found');
 		}
 
-		res.render('profile', { user });
+		res.render('profile', {
+			user,
+			followersCount: Number(user.followers?.length || 0),
+			followingCount: Number(user.following?.length || 0),
+		});
 	} catch (err) {
 		console.error(err);
 		res.status(500).send('Server error');
@@ -369,197 +434,239 @@ router.get('/logout', (req, res, next) => {
 	});
 });
 
+// at top of file (if not present)
 
-
-
-
-// Public profile view (everyone)
 router.get('/user/:username', async (req, res) => {
-  try {
-    const rawUsername = req.params.username || '';
-    const username = String(rawUsername).trim();
+	try {
+		const rawUsername = req.params.username || '';
+		const username = String(rawUsername).trim();
 
-    if (!/^[\w.-]{3,30}$/.test(username)) {
-      return res.status(400).render('404', { message: 'Invalid username' });
-    }
+		if (!/^[\w.-]{3,30}$/.test(username)) {
+			return res.status(400).render('404', { message: 'Invalid username' });
+		}
 
-    // Select public fields + followers (for count). Avoid selecting sensitive fields.
-    const profileUser = await userModel
-      .findOne({ username })
-      .select('username fullname profileimage bio createdAt followers') // include followers for count
-      .lean();
+		const agg = await userModel.aggregate([
+			{ $match: { username } },
+			{
+				$project: {
+					_id: 1,
+					username: 1,
+					fullname: 1,
+					profileimage: 1,
+					bio: 1,
+					createdAt: 1,
+					followersCount: { $size: { $ifNull: ['$followers', []] } },
+					followingCount: { $size: { $ifNull: ['$following', []] } },
+				},
+			},
+			{ $limit: 1 },
+		]);
 
-    if (!profileUser) {
-      return res.status(404).render('404', { message: 'User not found' });
-    }
+		const profileUser = agg && agg.length ? agg[0] : null;
+		if (!profileUser) {
+			return res.status(404).render('404', { message: 'User not found' });
+		}
 
-    // Pagination for this user's posts
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const rawLimit = parseInt(req.query.limit, 10) || 20;
-    const MAX_LIMIT = 50;
-    const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT);
-    const skip = (page - 1) * limit;
+		const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+		const rawLimit = parseInt(req.query.limit, 10) || 20;
+		const MAX_LIMIT = 50;
+		const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT);
+		const skip = (page - 1) * limit;
 
-    const [totalPosts, posts] = await Promise.all([
-      postModel.countDocuments({ user: profileUser._id }),
-      postModel
-        .find({ user: profileUser._id })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate('user', 'username fullname profileimage')
-        .lean(),
-    ]);
+		const [totalPosts, posts] = await Promise.all([
+			postModel.countDocuments({ user: profileUser._id }),
+			postModel
+				.find({ user: profileUser._id })
+				.sort({ createdAt: -1 })
+				.skip(skip)
+				.limit(limit)
+				.populate('user', 'username fullname profileimage')
+				.lean(),
+		]);
 
-    const pagination = {
-      currentPage: page,
-      totalPages: Math.ceil(totalPosts / limit),
-      hasNextPage: page < Math.ceil(totalPosts / limit),
-      totalPosts,
-    };
+		const totalPages = Math.ceil(totalPosts / limit);
+		const pagination = {
+			currentPage: page,
+			totalPages,
+			hasNextPage: page < totalPages,
+			totalPosts,
+		};
 
-    // If AJAX / API request, return JSON
-    const wantsJson =
-      req.get('x-requested-with') === 'XMLHttpRequest' ||
-      (req.get('accept') || '').includes('application/json');
+		const wantsJson =
+			req.get('x-requested-with') === 'XMLHttpRequest' ||
+			(req.get('accept') || '').includes('application/json');
 
-    if (wantsJson) {
-      // include follower count
-      const followersCount = Array.isArray(profileUser.followers) ? profileUser.followers.length : 0;
-      return res.json({ success: true, user: profileUser, posts, pagination, followersCount });
-    }
+		let viewer = null;
+		let isFollowing = false;
 
-    // If viewer is logged in, fetch just the following array to check follow-state
-    let viewer = null;
-    if (req.user && Types.ObjectId.isValid(req.user._id)) {
-      viewer = await userModel
+		if (req.user && Types.ObjectId.isValid(req.user._id)) {
+			viewer = await userModel
 				.findById(req.user._id)
-				.select('username following profileimage fullname email ')
+				.select('username profileimage fullname')
 				.lean();
-    }
 
-    // derive followersCount for template convenience
-    profileUser.followersCount = Array.isArray(profileUser.followers) ? profileUser.followers.length : 0;
+			const exists = await userModel.exists({
+				_id: req.user._id,
+				following: profileUser._id,
+			});
+			isFollowing = !!exists;
+		}
 
-    res.render('user_profile', {
-      profileUser,
-      posts,
-      pagination,
-      viewer: viewer || null,
-      timeAgo,
-    });
-  } catch (err) {
-    console.error('Public profile error:', err);
-    res.status(500).send('Server error');
-  }
+		if (wantsJson) {
+			return res.json({
+				success: true,
+				user: profileUser,
+				posts,
+				pagination,
+				followersCount: Number(profileUser.followersCount || 0),
+				followingCount: Number(profileUser.followingCount || 0),
+				isFollowing,
+				viewer: viewer || null,
+			});
+		}
+
+		res.render('user_profile', {
+			profileUser,
+			posts,
+			pagination,
+			viewer: viewer || null,
+			isFollowing,
+			timeAgo,
+		});
+	} catch (err) {
+		console.error('Public profile error:', err);
+		res.status(500).send('Server error');
+	}
 });
 
 // Optional: API-only endpoint to fetch more posts for infinite scroll
 router.get('/user/:username/posts', async (req, res) => {
-  try {
-    const username = String(req.params.username || '').trim();
-    if (!/^[\w.-]{3,30}$/.test(username)) return res.status(400).json({ error: 'Invalid username' });
+	try {
+		const username = String(req.params.username || '').trim();
+		if (!/^[\w.-]{3,30}$/.test(username))
+			return res.status(400).json({ error: 'Invalid username' });
 
-    const user = await userModel.findOne({ username }).select('_id').lean();
-    if (!user) return res.status(404).json({ error: 'User not found' });
+		const user = await userModel.findOne({ username }).select('_id').lean();
+		if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const rawLimit = parseInt(req.query.limit, 10) || 20;
-    const MAX_LIMIT = 50;
-    const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT);
-    const skip = (page - 1) * limit;
+		const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+		const rawLimit = parseInt(req.query.limit, 10) || 20;
+		const MAX_LIMIT = 50;
+		const limit = Math.min(Math.max(1, rawLimit), MAX_LIMIT);
+		const skip = (page - 1) * limit;
 
-    const [totalPosts, posts] = await Promise.all([
-      postModel.countDocuments({ user: user._id }),
-      postModel
-        .find({ user: user._id })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate('user', 'username fullname profileimage')
-        .lean(),
-    ]);
+		const [totalPosts, posts] = await Promise.all([
+			postModel.countDocuments({ user: user._id }),
+			postModel
+				.find({ user: user._id })
+				.sort({ createdAt: -1 })
+				.skip(skip)
+				.limit(limit)
+				.populate('user', 'username fullname profileimage')
+				.lean(),
+		]);
 
-    const pagination = { currentPage: page, totalPages: Math.ceil(totalPosts / limit), hasNextPage: page < Math.ceil(totalPosts / limit), totalPosts };
+		const pagination = {
+			currentPage: page,
+			totalPages: Math.ceil(totalPosts / limit),
+			hasNextPage: page < Math.ceil(totalPosts / limit),
+			totalPosts,
+		};
 
-    res.json({ success: true, posts, pagination });
-  } catch (err) {
-    console.error('User posts API error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
+		res.json({ success: true, posts, pagination });
+	} catch (err) {
+		console.error('User posts API error:', err);
+		res.status(500).json({ error: 'Server error' });
+	}
 });
-
-
 
 // rate limiter for follow API
 const followLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // max 10 follow/unfollow attempts per minute per IP
-  message: { error: 'Too many follow actions. Try again soon.' },
+	windowMs: 60 * 1000, // 1 minute
+	max: 10, // max 10 follow/unfollow attempts per minute per IP
+	message: { error: 'Too many follow actions. Try again soon.' },
 });
 
 // Toggle follow/unfollow (robust version)
-router.post('/users/:username/follow', isLoggedIn, followLimiter, async (req, res) => {
-  try {
-    const targetUsername = String(req.params.username || '').trim();
-    if (!/^[\w.-]{3,30}$/.test(targetUsername)) {
-      return res.status(400).json({ error: 'Invalid username' });
-    }
+router.post(
+	'/users/:username/follow',
+	isLoggedIn,
+	followLimiter,
+	async (req, res) => {
+		try {
+			const targetUsername = String(req.params.username || '').trim();
+			if (!/^[\w.-]{3,30}$/.test(targetUsername)) {
+				return res.status(400).json({ error: 'Invalid username' });
+			}
 
-    if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+			if (!req.user)
+				return res.status(401).json({ error: 'Not authenticated' });
 
-    if (req.user.username === targetUsername) {
-      return res.status(400).json({ error: 'Cannot follow yourself' });
-    }
+			if (req.user.username === targetUsername) {
+				return res.status(400).json({ error: 'Cannot follow yourself' });
+			}
 
-    // Find only necessary fields
-    const target = await userModel.findOne({ username: targetUsername }).select('_id followers').exec();
-    if (!target) return res.status(404).json({ error: 'User not found' });
+			// Find only necessary fields
+			const target = await userModel
+				.findOne({ username: targetUsername })
+				.select('_id followers')
+				.exec();
+			if (!target) return res.status(404).json({ error: 'User not found' });
 
-    const meId = req.user._id; // may be ObjectId or string; normalize when comparing
+			const meId = req.user._id; // may be ObjectId or string; normalize when comparing
 
-    // Normalize comparisons to strings to avoid .equals errors when items are plain strings
-    const alreadyFollowing = Array.isArray(target.followers)
-      ? target.followers.some(f => String(f) === String(meId))
-      : false;
+			// Normalize comparisons to strings to avoid .equals errors when items are plain strings
+			const alreadyFollowing = Array.isArray(target.followers)
+				? target.followers.some((f) => String(f) === String(meId))
+				: false;
 
-    if (alreadyFollowing) {
-      // Unfollow: atomically remove follower and update my following
-      const updatedTarget = await userModel.findByIdAndUpdate(
-        target._id,
-        { $pull: { followers: meId } },
-        { new: true, select: 'followers' }
-      ).exec();
+			if (alreadyFollowing) {
+				// Unfollow: atomically remove follower and update my following
+				const updatedTarget = await userModel
+					.findByIdAndUpdate(
+						target._id,
+						{ $pull: { followers: meId } },
+						{ new: true, select: 'followers' },
+					)
+					.exec();
 
-      await userModel.findByIdAndUpdate(
-        meId,
-        { $pull: { following: target._id } }
-      ).exec();
+				await userModel
+					.findByIdAndUpdate(meId, { $pull: { following: target._id } })
+					.exec();
 
-      const followersCount = Array.isArray(updatedTarget && updatedTarget.followers) ? updatedTarget.followers.length : 0;
-      return res.json({ success: true, following: false, followersCount });
-    } else {
-      // Follow: atomically add follower and update my following
-      const updatedTarget = await userModel.findByIdAndUpdate(
-        target._id,
-        { $addToSet: { followers: meId } },
-        { new: true, select: 'followers' }
-      ).exec();
+				const followersCount = Array.isArray(
+					updatedTarget && updatedTarget.followers,
+				)
+					? updatedTarget.followers.length
+					: 0;
+				return res.json({ success: true, following: false, followersCount });
+			} else {
+				// Follow: atomically add follower and update my following
+				const updatedTarget = await userModel
+					.findByIdAndUpdate(
+						target._id,
+						{ $addToSet: { followers: meId } },
+						{ new: true, select: 'followers' },
+					)
+					.exec();
 
-      await userModel.findByIdAndUpdate(
-        meId,
-        { $addToSet: { following: target._id } }
-      ).exec();
+				await userModel
+					.findByIdAndUpdate(meId, { $addToSet: { following: target._id } })
+					.exec();
 
-      const followersCount = Array.isArray(updatedTarget && updatedTarget.followers) ? updatedTarget.followers.length : 0;
-      return res.json({ success: true, following: true, followersCount });
-    }
-  } catch (err) {
-    console.error('Follow/unfollow error:', err);
-    // include minimal error detail for debugging (do NOT expose stack in production)
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
+				const followersCount = Array.isArray(
+					updatedTarget && updatedTarget.followers,
+				)
+					? updatedTarget.followers.length
+					: 0;
+				return res.json({ success: true, following: true, followersCount });
+			}
+		} catch (err) {
+			console.error('Follow/unfollow error:', err);
+			// include minimal error detail for debugging (do NOT expose stack in production)
+			res.status(500).json({ error: 'Server error' });
+		}
+	},
+);
 
 module.exports = router;

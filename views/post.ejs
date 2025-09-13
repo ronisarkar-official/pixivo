@@ -1,68 +1,35 @@
-<%- include("partials/header.ejs") %> 
-
-<% 
-// Post and author data
-var author = (post && post.user) ? post.user : {};
-var relAll = Array.isArray(posts) ? posts : []; 
-var excludeId = (post && post._id) ? String(post._id) : null; 
-var relatedUnfiltered = excludeId ? relAll.filter(function(p){ return String(p._id) !== excludeId; }) : relAll;
-
-// --- FIX: Remove duplicates by _id ---
-function dedupeById(arr){
-  var seen = Object.create(null);
-  var out = [];
-  for (var i = 0; i < (Array.isArray(arr) ? arr.length : 0); i++){
-    var it = arr[i];
-    if (!it || !it._id) continue;
-    var id = String(it._id);
-    if (!seen[id]){
-      seen[id] = true;
-      out.push(it);
-    }
-  }
-  return out;
-}
-
-var uniqueRelated = dedupeById(relatedUnfiltered || []);
-
-// Shuffle once
-function shuffleArray(arr) { 
-  const a = Array.isArray(arr) ? arr.slice() : []; 
-  for (let i = a.length - 1; i > 0; i--) { 
-    const j = Math.floor(Math.random() * (i + 1)); 
-    const tmp = a[i]; a[i] = a[j]; a[j] = tmp; 
-  } 
-  return a; 
-}
-
-var shuffled = shuffleArray(uniqueRelated);
-
-// --- FIX: Split into two disjoint lists ---
-var splitIndex = Math.min(10, shuffled.length); // first 8 left, rest aside
-var mainRelated = shuffled.slice(0, splitIndex);
-var asideRelated = shuffled.slice(splitIndex);
-
-// Single-post variables
-var imgUrl = (post && post.image) ? post.image : '/images/placeholder.png'; 
-var imgAlt = (post && post.imageTitle) ? post.imageTitle : 'Post image'; 
-var title = (post && post.imageTitle) ? post.imageTitle : 'Untitled'; 
-var desc = (post && post.imageDesc) ? post.imageDesc : ''; 
-var likes = (post && Array.isArray(post.likes)) ? post.likes.length : 0; 
-var commentsCount = (post && Array.isArray(post.comments)) ? post.comments.length : 0; 
-var authorImg = (author && author.profileimage) ? author.profileimage : '/images/defaultpic.png'; 
-var authorName = (author && author.fullname) ? author.fullname : 'Unknown'; 
-var authorUsername = (author && author.username) ? author.username : 'unknown'; 
-var createdAt = (post && post.createdAt) ? new Date(post.createdAt) : null; 
-var safePostId = (post && post._id) ? post._id : ''; 
-%>
-
+<%- include("partials/header.ejs") %> <% var author = (post && post.user) ?
+post.user : {}; var relAll = Array.isArray(posts) ? posts : []; var excludeId =
+(post && post._id) ? String(post._id) : null; var relatedUnfiltered = excludeId
+? relAll.filter(function(p){ return String(p._id) !== excludeId; }) : relAll;
+function dedupeById(arr){ var seen = Object.create(null); var out = []; for (var
+i = 0; i < (Array.isArray(arr) ? arr.length : 0); i++){ var it = arr[i]; if (!it
+|| !it._id) continue; var id = String(it._id); if (!seen[id]){ seen[id] = true;
+out.push(it); } } return out; } var uniqueRelated = dedupeById(relatedUnfiltered
+|| []); function shuffleArray(arr) { const a = Array.isArray(arr) ? arr.slice()
+: []; for (let i = a.length - 1; i > 0; i--) { const j =
+Math.floor(Math.random() * (i + 1)); const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+} return a; } var shuffled = shuffleArray(uniqueRelated); var splitIndex =
+Math.min(10, shuffled.length); var mainRelated = shuffled.slice(0, splitIndex);
+var asideRelated = shuffled.slice(splitIndex); var imgUrl = (post && post.image)
+? post.image : '/images/placeholder.png'; var imgAlt = (post && post.imageTitle)
+? post.imageTitle : 'Post image'; var title = (post && post.imageTitle) ?
+post.imageTitle : 'Untitled'; var desc = (post && post.imageDesc) ?
+post.imageDesc : ''; var likes = (post && Array.isArray(post.likes)) ?
+post.likes.length : 0; var commentsCount = (post &&
+Array.isArray(post.comments)) ? post.comments.length : 0; var authorImg =
+(author && author.profileimage) ? author.profileimage :
+'/images/defaultpic.png'; var authorName = (author && author.fullname) ?
+author.fullname : 'Unknown'; var authorUsername = (author && author.username) ?
+author.username : 'unknown'; var createdAt = (post && post.createdAt) ? new
+Date(post.createdAt) : null; var safePostId = (post && post._id) ? post._id :
+''; %>
 
 <!-- Page wrapper -->
 <main
 	class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-white"
 	data-post-id="<%= safePostId %>"
 	data-current-user='<%- (JSON.stringify(user || null) || "null").replace(/</g, "\\u003c") %>'>
-	
 	<!-- Top actions -->
 	<div class="mb-4 flex items-center justify-between gap-3">
 		<a
@@ -92,7 +59,9 @@ var safePostId = (post && post._id) ? post._id : '';
 					aria-haspopup="true"
 					aria-expanded="false"
 					class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus-visible:ring-2 focus-visible:ring-white/20 cursor-pointer">
-					<i class="ri-share-forward-line text-lg" aria-hidden="true"></i>
+					<i
+						class="ri-share-forward-line text-lg"
+						aria-hidden="true"></i>
 					<span class="hidden sm:inline">Share</span>
 				</button>
 
@@ -105,17 +74,23 @@ var safePostId = (post && post._id) ? post._id : '';
 					<button
 						data-action="native"
 						class="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition"
-						role="menuitem">Share via device</button>
+						role="menuitem"
+						>Share via device</button
+					>
 					<button
 						data-action="copy"
 						class="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition"
-						role="menuitem">Copy link</button>
+						role="menuitem"
+						>Copy link</button
+					>
 					<a
 						href="<%= imgUrl %>"
 						target="_blank"
 						rel="noopener"
 						class="block px-3 py-2 text-sm hover:bg-white/5 transition"
-						role="menuitem">Open image</a>
+						role="menuitem"
+						>Open image</a
+					>
 				</div>
 			</div>
 
@@ -124,7 +99,9 @@ var safePostId = (post && post._id) ? post._id : '';
 				target="_blank"
 				rel="noopener"
 				class="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition focus-visible:ring-2 focus-visible:ring-white/20">
-				<i class="ri-external-link-line text-lg" aria-hidden="true"></i>
+				<i
+					class="ri-external-link-line text-lg"
+					aria-hidden="true"></i>
 				<span class="hidden sm:inline">Open</span>
 			</a>
 
@@ -133,7 +110,9 @@ var safePostId = (post && post._id) ? post._id : '';
 				href="<%= imgUrl %>"
 				download
 				class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/6 text-sm border border-white/8 hover:bg-white/8 transition focus-visible:ring-2 focus-visible:ring-white/20">
-				<i class="ri-download-2-line text-lg" aria-hidden="true"></i>
+				<i
+					class="ri-download-2-line text-lg"
+					aria-hidden="true"></i>
 				<span class="hidden sm:inline">Download</span>
 			</a>
 		</div>
@@ -164,21 +143,78 @@ var safePostId = (post && post._id) ? post._id : '';
 			</div>
 
 			<!-- Post Details -->
-			<div class="rounded-2xl border border-white/10 bg-[#0f1720] p-4 space-y-6 mt-2">
+			<div
+				class="rounded-2xl border border-white/10 bg-[#0f1720] p-4 space-y-6 mt-2">
 				<!-- Author info -->
 				<header class="p-2">
 					<div class="flex items-center justify-between gap-4">
-			<a href="/user/<%= authorUsername %>"><div class="flex items-center gap-3">
+						<a
+							href="/user/<%= authorUsername %>"
+							class="flex items-center gap-3">
 							<img
 								src="<%= authorImg %>"
 								alt="Author avatar"
-								class="w-12 h-12 rounded-full object-cover " />
+								class="w-12 h-12 rounded-full object-cover" />
 							<div>
-								<div class="font-semibold text-sm leading-tight"><%= authorName %></div>
-								<div class="text-xs text-white/70 leading-tight">@<%= authorUsername %></div>
+								<div class="font-semibold text-sm leading-tight"
+									><%= authorName %></div
+								>
+								<div class="text-xs text-white/70 leading-tight"
+									>@<%= authorUsername %></div
+								>
 							</div>
-						</div>
-					</a>
+						</a>
+
+						<!-- Follow button: progressive-enhancement form + JS toggle -->
+						<% if (!isOwner) { %>
+						<form
+							id="followForm"
+							action="/user/<%= authorUsername %>/follow"
+							method="POST"
+							class="m-0">
+							<% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+							<input
+								type="hidden"
+								name="_csrf"
+								value="<%= csrfToken %>" />
+							<% } %>
+
+							<button
+								id="followBtn"
+								type="submit"
+								aria-pressed="<%= isFollowing ? 'true' : 'false' %>"
+								data-username="<%= authorUsername %>"
+								class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 <%= isFollowing ? 'bg-white text-gray-800 border border-gray-200 shadow-sm' : 'bg-blue-600 text-white shadow-md hover:bg-blue-700' %>">
+								<% if (isFollowing) { %>
+								<!-- following icon/text -->
+								<svg
+									class="w-4 h-4"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+									aria-hidden="true">
+									<path
+										fill-rule="evenodd"
+										d="M16.707 5.293a1 1 0 00-1.414-1.414L8 11.172 4.707 7.879A1 1 0 003.293 9.293l4 4a1 1 0 001.414 0l8-8z"
+										clip-rule="evenodd" />
+								</svg>
+								<span class="follow-text">Following</span>
+								<% } else { %>
+								<!-- follow icon/text -->
+								<svg
+									class="w-4 h-4"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+									aria-hidden="true">
+									<path
+										fill-rule="evenodd"
+										d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+										clip-rule="evenodd" />
+								</svg>
+								<span class="follow-text">Follow</span>
+								<% } %>
+							</button>
+						</form>
+						<% } %>
 					</div>
 				</header>
 
@@ -192,7 +228,9 @@ var safePostId = (post && post._id) ? post._id : '';
 				<div class="hidden lg:block">
 					<h1 class="text-2xl font-extrabold leading-tight"><%= title %></h1>
 					<% if (desc) { %>
-					<p class="mt-2 text-base text-white/85 leading-relaxed"><%= desc %></p>
+					<p class="mt-2 text-base text-white/85 leading-relaxed"
+						><%= desc %></p
+					>
 					<% } %>
 				</div>
 
@@ -200,31 +238,43 @@ var safePostId = (post && post._id) ? post._id : '';
 				<div class="flex items-center justify-between text-white/85 text-sm">
 					<div class="flex items-center gap-3">
 						<button
-  id="likeBtn-<%= safePostId %>"
-  class="group inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition cursor-pointer"
-  aria-pressed="<%= (user && Array.isArray(post.likes) && post.likes.includes(user._id)) ? 'true' : 'false' %>">
-  <i class="ri-heart-line" aria-hidden="true"></i>
-  <i class="ri-heart-fill hidden" aria-hidden="true"></i>
-  <span id="likeCount-<%= safePostId %>"><%= likes %></span>
-</button>
-
+							id="likeBtn-<%= safePostId %>"
+							class="group inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition cursor-pointer"
+							aria-pressed="<%= (user && Array.isArray(post.likes) && post.likes.includes(user._id)) ? 'true' : 'false' %>">
+							<i
+								class="ri-heart-line"
+								aria-hidden="true"></i>
+							<i
+								class="ri-heart-fill hidden"
+								aria-hidden="true"></i>
+							<span id="likeCount-<%= safePostId %>"><%= likes %></span>
+						</button>
 
 						<a
 							href="#commentInput-<%= safePostId %>"
 							class="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 hover:bg-white/5 transition">
-							<i class="ri-chat-1-line" aria-hidden="true"></i>
-							<span id="commentCount-<%= safePostId %>"><%= commentsCount %></span>
+							<i
+								class="ri-chat-1-line"
+								aria-hidden="true"></i>
+							<span id="commentCount-<%= safePostId %>"
+								><%= commentsCount %></span
+							>
 						</a>
 					</div>
 
 					<div class="text-xs text-white/60">
-						Posted <%= createdAt ? createdAt.toLocaleDateString() : new Date(post.createdAt || Date.now()).toLocaleDateString() %>
+						Posted <%= createdAt ? createdAt.toLocaleDateString() : new
+						Date(post.createdAt || Date.now()).toLocaleDateString() %>
 					</div>
 				</div>
 
 				<!-- Comment input -->
 				<div>
-					<label for="commentInput-<%= safePostId %>" class="text-xs text-white/70">Add a comment</label>
+					<label
+						for="commentInput-<%= safePostId %>"
+						class="text-xs text-white/70"
+						>Add a comment</label
+					>
 					<div class="mt-2 flex items-center gap-2">
 						<input
 							id="commentInput-<%= safePostId %>"
@@ -242,16 +292,19 @@ var safePostId = (post && post._id) ? post._id : '';
 					<ul
 						id="commentList-<%= safePostId %>"
 						class="scrollarea mt-3 flex flex-col space-y-2 max-h-48 overflow-y-auto">
-						<% (Array.isArray(post.comments) ? post.comments : []).slice().reverse().forEach(c => { %>
+						<% (Array.isArray(post.comments) ? post.comments :
+						[]).slice().reverse().forEach(c => { %>
 						<li class="flex items-start gap-3 p-2">
 							<img
 								src="<%= (c.user && c.user.profileimage) ? c.user.profileimage : '/images/defaultpic.png' %>"
 								alt="avatar"
 								class="w-9 h-9 rounded-full object-cover" />
 							<div class="flex-1">
-								<p class="text-sm text-white leading-relaxed break-words flex items-center gap-2">
+								<p
+									class="text-sm text-white leading-relaxed break-words flex items-center gap-2">
 									<span class="font-semibold text-white">
-										<%= (c.user && c.user.username) ? c.user.username : 'Unknown' %>
+										<%= (c.user && c.user.username) ? c.user.username :
+										'Unknown' %>
 									</span>
 									<span class="text-xs text-white/50">
 										<%= c.createdAt ? timeAgo(c.createdAt) : '' %>
@@ -267,61 +320,64 @@ var safePostId = (post && post._id) ? post._id : '';
 
 			<!-- Left side related posts -->
 			<section class="mt-6 w-full">
- 
-
-  <div id="relatedGridMain" class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4 ">
-    <% mainRelated.forEach((p) => { %>
-      <a href="/pin/<%= p._id %>" class="masonry-item block group " data-id="<%= p._id %>">
-        <div class="thumb w-full h-44 sm:h-36 md:h-44 lg:h-40 overflow-hidden">
-          <img
-            src="<%= p.image || '/images/placeholder.png' %>"
-            alt="<%= p.imageTitle || 'Related image' %>"
-            loading="lazy"
-            decoding="async"
-            referrerpolicy="no-referrer"
-            class="w-full h-full object-cover block rounded-2xl transition-transform duration-300 group-hover:scale-105 overflow-hidden" />
-        </div>
-        <% if (p.imageTitle) { %>
-          <div class="text-xs text-white/80 font-medium truncate px-2 mt-1">
-            <%= p.imageTitle %>
-          </div>
-        <% } %>
-      </a>
-    <% }) %>
-  </div>
-</section>
-
+				<div
+					id="relatedGridMain"
+					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
+					<% mainRelated.forEach((p) => { %>
+					<a
+						href="/pin/<%= p._id %>"
+						class="masonry-item block group"
+						data-id="<%= p._id %>">
+						<div
+							class="thumb w-full h-44 sm:h-36 md:h-44 lg:h-40 overflow-hidden">
+							<img
+								src="<%= p.image || '/images/placeholder.png' %>"
+								alt="<%= p.imageTitle || 'Related image' %>"
+								loading="lazy"
+								decoding="async"
+								referrerpolicy="no-referrer"
+								class="w-full h-full object-cover block rounded-2xl transition-transform duration-300 group-hover:scale-105 overflow-hidden" />
+						</div>
+						<% if (p.imageTitle) { %>
+						<div class="text-xs text-white/80 font-medium truncate px-2 mt-1">
+							<%= p.imageTitle %>
+						</div>
+						<% } %>
+					</a>
+					<% }) %>
+				</div>
+			</section>
 		</section>
 
 		<!-- Right: More Related Posts -->
 		<aside class="lg:col-span-6 flex flex-col gap-6">
 			<section class="w-full p-1">
-  
-
-  <div id="relatedGridAside" class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4 mb-4">
-    <% asideRelated.forEach((p) => { %>
-      <a href="/pin/<%= p._id %>" class="masonry-item block group" data-id="<%= p._id %>">
-        <div class="thumb w-full h-32 overflow-hidden">
-          <img
-            src="<%= p.image || '/images/placeholder.png' %>"
-            alt="<%= p.imageTitle || 'Related image' %>"
-            loading="lazy"
-            decoding="async"
-            referrerpolicy="no-referrer"
-            class="w-full h-full object-cover block rounded-2xl transition-transform duration-300 group-hover:scale-105" />
-        </div>
-        <% if (p.imageTitle) { %>
-          <div class="text-xs text-white/80 font-medium truncate px-2 mt-1">
-            <%= p.imageTitle %>
-          </div>
-        <% } %>
-      </a>
-    <% }) %>
-  </div>
-
-  
-</section>
-
+				<div
+					id="relatedGridAside"
+					class="masonry-grid grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4 mb-4">
+					<% asideRelated.forEach((p) => { %>
+					<a
+						href="/pin/<%= p._id %>"
+						class="masonry-item block group"
+						data-id="<%= p._id %>">
+						<div class="thumb w-full h-32 overflow-hidden">
+							<img
+								src="<%= p.image || '/images/placeholder.png' %>"
+								alt="<%= p.imageTitle || 'Related image' %>"
+								loading="lazy"
+								decoding="async"
+								referrerpolicy="no-referrer"
+								class="w-full h-full object-cover block rounded-2xl transition-transform duration-300 group-hover:scale-105" />
+						</div>
+						<% if (p.imageTitle) { %>
+						<div class="text-xs text-white/80 font-medium truncate px-2 mt-1">
+							<%= p.imageTitle %>
+						</div>
+						<% } %>
+					</a>
+					<% }) %>
+				</div>
+			</section>
 		</aside>
 	</div>
 </main>
@@ -334,7 +390,8 @@ var safePostId = (post && post._id) ? post._id : '';
 
 <style>
 	/* Focus styles */
-	a:focus, button:focus {
+	a:focus,
+	button:focus {
 		outline: 3px solid rgba(255, 255, 255, 0.08);
 		outline-offset: 2px;
 		overflow: hidden;
@@ -381,7 +438,9 @@ var safePostId = (post && post._id) ? post._id : '';
 
 	/* Responsive gaps */
 	@media (max-width: 640px) {
-		.masonry-grid { gap: 10px; }
+		.masonry-grid {
+			gap: 10px;
+		}
 	}
 
 	/* Comment scrollbar */
@@ -401,22 +460,76 @@ var safePostId = (post && post._id) ? post._id : '';
 	}
 </style>
 <script>
-	 document.addEventListener("DOMContentLoaded", function () {
-    const likeBtn = document.getElementById("likeBtn-<%= safePostId %>");
-    if (likeBtn) {
-      // preload the sound
-      const likeSound = new Audio("/sounds/like-sound.mp3");
-      likeSound.volume = 0.6; // adjust volume (0.0 - 1.0)
+	document.addEventListener('DOMContentLoaded', function () {
+		const likeBtn = document.getElementById('likeBtn-<%= safePostId %>');
+		if (likeBtn) {
+			// preload the sound
+			const likeSound = new Audio('/sounds/like-sound.mp3');
+			likeSound.volume = 0.6; // adjust volume (0.0 - 1.0)
 
-      likeBtn.addEventListener("click", () => {
-        // restart sound if spamming clicks
-        likeSound.currentTime = 0;
-        likeSound.play().catch(err => {
-          console.warn("Autoplay blocked:", err);
-        });
-      });
-    }
-  });
+			likeBtn.addEventListener('click', () => {
+				// restart sound if spamming clicks
+				likeSound.currentTime = 0;
+				likeSound.play().catch((err) => {
+					console.warn('Autoplay blocked:', err);
+				});
+			});
+		}
+	});
 </script>
+<script>
+	(() => {
+	  const btn = document.getElementById('followBtn');
+	  if (!btn) return;
+
+	  const username = btn.dataset.username || '';
+	  const label = document.getElementById('followLabel') || btn;
+	  const countEl = document.getElementById('followersCount');
+	  let following = btn.dataset.following === 'true';
+	  const csrf = <%= (typeof csrfToken !== 'undefined' && csrfToken) ? JSON.stringify(csrfToken) : 'null' %>;
+
+	  btn.addEventListener('click', async () => {
+	    if (!username) return;
+	    btn.disabled = true;
+
+	    // optimistic toggle
+	    const prev = following;
+	    following = !prev;
+	    label.textContent = following ? 'Unfollow' : 'Follow';
+	    if (countEl) countEl.textContent = String(Math.max(0, (parseInt(countEl.textContent||'0',10) + (following ? 1 : -1))));
+
+	    try {
+	      const headers = {};
+	      if (csrf && csrf !== 'null') headers['X-CSRF-Token'] = csrf;
+	      const res = await fetch('/users/' + encodeURIComponent(username) + '/follow', {
+	        method: 'POST',
+	        credentials: 'same-origin',
+	        headers
+	      });
+
+	      const data = await res.json();
+	      if (!res.ok || !data || !data.success) throw new Error('Request failed');
+
+	      // sync with server's truth
+	      following = !!data.following;
+	      if (typeof data.followersCount !== 'undefined' && countEl) {
+	        countEl.textContent = String(data.followersCount);
+	      }
+	      label.textContent = following ? 'Unfollow' : 'Follow';
+	    } catch (err) {
+	      // rollback on error
+	      following = prev;
+	      label.textContent = prev ? 'Unfollow' : 'Follow';
+	      if (countEl) countEl.textContent = String(Math.max(0, parseInt(countEl.textContent||'0',10) + (prev ? 0 : 0)));
+	      console.error('Follow toggle failed:', err);
+	      alert('Could not update follow status. Try again.');
+	    } finally {
+	      btn.dataset.following = following ? 'true' : 'false';
+	      btn.disabled = false;
+	    }
+	  });
+	})();
+</script>
+
 <script src="/javascripts/postscript.js"></script>
 <%- include("partials/footer.ejs") %>

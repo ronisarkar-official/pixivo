@@ -38,7 +38,7 @@ function timeAgo(date) {
 // ===== Rate Limiter for Auth =====
 const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
-	max: 10,
+	max: 30,
 	message: 'Too many login/register attempts. Please try again later.',
 });
 

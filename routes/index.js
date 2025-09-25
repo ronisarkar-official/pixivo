@@ -3,7 +3,6 @@ require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const rateLimit = require('express-rate-limit');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const { Types } = require('mongoose');
@@ -34,13 +33,6 @@ function timeAgo(date) {
 	}
 	return 'just now';
 }
-
-// ===== Rate Limiter for Auth =====
-const authLimiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	max: 30,
-	message: 'Too many login/register attempts. Please try again later.',
-});
 
 // ===== Middleware =====
 function isLoggedIn(req, res, next) {
@@ -397,7 +389,7 @@ router.post('/upload', isLoggedIn, upload.single('file'), async (req, res) => {
 });
 
 // Auth routes remain the same
-router.post('/register', authLimiter, async (req, res) => {
+router.post('/register', async (req, res) => {
 	const errors = validationResult(req);
 	if (!errors.isEmpty()) {
 		req.flash('error', 'Validation failed');
@@ -419,7 +411,7 @@ router.post('/register', authLimiter, async (req, res) => {
 
 router.post(
 	'/login',
-	authLimiter,
+
 	passport.authenticate('local', {
 		successRedirect: '/feed',
 		failureRedirect: '/login',
@@ -580,18 +572,11 @@ router.get('/user/:username/posts', async (req, res) => {
 	}
 });
 
-// rate limiter for follow API
-const followLimiter = rateLimit({
-	windowMs: 60 * 1000, // 1 minute
-	max: 10, // max 10 follow/unfollow attempts per minute per IP
-	message: { error: 'Too many follow actions. Try again soon.' },
-});
-
 // Toggle follow/unfollow (robust version)
 router.post(
 	'/users/:username/follow',
 	isLoggedIn,
-	followLimiter,
+
 	async (req, res) => {
 		try {
 			const targetUsername = String(req.params.username || '').trim();

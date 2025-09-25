@@ -1,5 +1,5 @@
-<%- include('partials/header', { user: viewer || {} }) %> <% if (viewer &&
-viewer.username === profileUser.username) { %>
+<%- include('partials/header', { user: viewer || {} }) %> 
+<% if (viewer && viewer.username === profileUser.username) { %>
 <script>
 	location.replace('/profile');
 </script>
@@ -28,22 +28,17 @@ viewer.username === profileUser.username) { %>
 		</a>
 
 		<div class="bg-[#1e2939] rounded-2xl p-6 shadow-sm">
-			<% const profile = profileUser || {}; const v = viewer || null; const
-			isViewer = !!v; const isOwner = isViewer && v.username ===
-			profile.username; const isFollowingLocal = (typeof isFollowing !==
-			'undefined') ? !!isFollowing : (isViewer && Array.isArray(v.following) ?
-			v.following.some(f => String(f) === String(profile._id || '')) : false);
-			const followersCountInit = Number(typeof profile.followersCount !==
-			'undefined' ? profile.followersCount : (Array.isArray(profile.followers) ?
-			profile.followers.length : 0)); const postsCountInit = Number(typeof
-			profile.postsCount !== 'undefined' ? profile.postsCount :
-			(Array.isArray(posts) ? posts.length : 0)); const followingCountInit =
-			Number(typeof profile.followingCount !== 'undefined' ?
-			profile.followingCount : (Array.isArray(profile.following) ?
-			profile.following.length : 0)); const displayName = profile.fullname ||
-			profile.username || 'User'; const displayUsername = profile.username ||
-			'user'; const profileImageSrc = profile.profileimage ||
-			'/images/defaultpic.png'; %>
+			<% const profile = profileUser || {}; 
+			const v = viewer || null; 
+			const isViewer = !!v; 
+			const isOwner = isViewer && v.username === profile.username; 
+			const isFollowingLocal = !!isFollowing;
+			const followersCountInit = profile.followers?.length || 0;
+			const postsCountInit = pagination?.totalPosts || posts.length || 0;
+			const followingCountInit = profile.following?.length || 0;
+			const displayName = profile.fullname || profile.username || 'User'; 
+			const displayUsername = profile.username || 'user'; 
+			const profileImageSrc = profile.profileimage || '/images/defaultpic.png'; %>
 
 			<div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
 				<div class="flex items-center gap-6">
@@ -55,9 +50,7 @@ viewer.username === profileUser.username) { %>
 						decoding="async" />
 
 					<div class="hidden sm:block">
-						<h1 class="text-2xl font-semibold text-gray-50"
-							><%= displayName %></h1
-						>
+						<h1 class="text-2xl font-semibold text-gray-50"><%= displayName %></h1>
 						<p class="text-sm text-gray-50">@<%= displayUsername %></p>
 						<% if (profile.bio) { %>
 						<p class="mt-2 text-sm text-gray-50 max-w-xl"><%= profile.bio %></p>
@@ -65,25 +58,17 @@ viewer.username === profileUser.username) { %>
 
 						<div class="mt-3 flex items-center gap-6 text-sm text-gray-50">
 							<div>
-								<span class="font-semibold text-gray-50"
-									><%= postsCountInit %></span
-								>
+								<span class="font-semibold text-gray-50"><%= postsCountInit %></span>
 								posts
 							</div>
 
 							<div>
-								<span
-									id="followersCount"
-									class="font-semibold text-gray-50"
-									><%= followersCountInit %></span
-								>
+								<span id="followersCount" class="font-semibold text-gray-50"><%= followersCountInit %></span>
 								followers
 							</div>
 
 							<div>
-								<span class="font-semibold text-gray-50"
-									><%= followingCountInit %></span
-								>
+								<span class="font-semibold text-gray-50"><%= followingCountInit %></span>
 								following
 							</div>
 						</div>
@@ -105,47 +90,33 @@ viewer.username === profileUser.username) { %>
 						class="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 <%= isFollowingLocal ? 'bg-white text-gray-800 border border-gray-200 shadow-sm' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' %>"
 						data-username="<%= profile.username || '' %>"
 						data-following="<%= isFollowingLocal ? 'true' : 'false' %>">
-						<span id="followLabel"
-							><%= isFollowingLocal ? 'Unfollow' : 'Follow' %></span
-						>
+						<span id="followLabel"><%= isFollowingLocal ? 'Unfollow' : 'Follow' %></span>
 					</button>
 					<% } else { %>
 					<a
 						href="/login"
-						class="px-4 py-2 rounded-md border border-gray-200 text-sm font-medium"
-						>Log in</a
-					>
+						class="px-4 py-2 rounded-md border border-gray-200 text-sm font-medium">Log in</a>
 					<% } %>
 				</div>
 			</div>
 
 			<div class="block sm:hidden mt-4">
-				<p
-					class="text-sm font-semibold text-gray-50 truncate max-w-full"
-					title="<%= displayName %>"
-					><%= displayName %></p
-				>
+				<p class="text-sm font-semibold text-gray-50 truncate max-w-full" title="<%= displayName %>"><%= displayName %></p>
 				<p class="text-sm text-gray-300">@<%= displayUsername %></p>
 
 				<div class="mt-3 flex flex-wrap items-center gap-4 text-sm">
 					<div class="flex items-center gap-2 min-w-0">
-						<span class="font-semibold text-gray-50"
-							><%= postsCountInit %></span
-						>
+						<span class="font-semibold text-gray-50"><%= postsCountInit %></span>
 						<span class="text-gray-300">posts</span>
 					</div>
 
 					<div class="flex items-center gap-2 min-w-0">
-						<span class="font-semibold text-gray-50"
-							><%= followersCountInit %></span
-						>
+						<span class="font-semibold text-gray-50"><%= followersCountInit %></span>
 						<span class="text-gray-300">followers</span>
 					</div>
 
 					<div class="flex items-center gap-2 min-w-0">
-						<span class="font-semibold text-gray-50"
-							><%= followingCountInit %></span
-						>
+						<span class="font-semibold text-gray-50"><%= followingCountInit %></span>
 						<span class="text-gray-300">following</span>
 					</div>
 				</div>
@@ -155,40 +126,32 @@ viewer.username === profileUser.username) { %>
 		<section class="mt-8">
 			<h3 class="text-sm font-semibold text-gray-900 mb-3">Pins</h3>
 
-			<div
-				id="postsContainer"
-				class="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-				<% if (posts && posts.length) { %> <% for (let i = 0, len =
-				posts.length; i < len; i++) { const p = posts[i]; %>
-				<article class="break-inside-avoid mb-4">
-					<a
-						href="/pin/<%= p._id %>"
-						class="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
-						<% if (p.image) { %>
-						<img
-							src="<%= p.image %>"
-							alt="<%= p.imageTitle || 'post image' %>"
-							class="w-full object-cover"
-							style="max-height: 700px"
-							loading="lazy"
-							decoding="async" />
-						<% } else { %>
-						<div
-							class="w-full bg-gray-100 aspect-video flex items-center justify-center text-gray-400"
-							>No image</div
-						>
-						<% } %>
-					</a>
-					<div>
-						<% if (p.imageTitle) { %>
-						<h4 class="mt-3 font-medium text-gray-50"><%= p.imageTitle %></h4>
-						<% } %>
-					</div>
-				</article>
-				<% } %> <% } else { %>
-				<div class="bg-white rounded-2xl p-6 shadow-sm text-gray-600"
-					>No posts yet.</div
-				>
+			<div id="postsContainer" class="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+				<% if (posts && posts.length) { %> 
+					<% for (let i = 0, len = posts.length; i < len; i++) { const p = posts[i]; %>
+					<article class="break-inside-avoid mb-4">
+						<a href="/pin/<%= p._id %>" class="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+							<% if (p.image) { %>
+							<img
+								src="<%= p.image %>"
+								alt="<%= p.imageTitle || 'post image' %>"
+								class="w-full object-cover"
+								style="max-height: 700px"
+								loading="lazy"
+								decoding="async" />
+							<% } else { %>
+							<div class="w-full bg-gray-100 aspect-video flex items-center justify-center text-gray-400">No image</div>
+							<% } %>
+						</a>
+						<div>
+							<% if (p.imageTitle) { %>
+							<h4 class="mt-3 font-medium text-gray-50"><%= p.imageTitle %></h4>
+							<% } %>
+						</div>
+					</article>
+					<% } %> 
+				<% } else { %>
+				<div class="bg-white rounded-2xl p-6 shadow-sm text-gray-600">No posts yet.</div>
 				<% } %>
 			</div>
 
@@ -196,9 +159,11 @@ viewer.username === profileUser.username) { %>
 			<div class="text-center mt-6">
 				<button
 					id="loadMoreBtn"
-					class="inline-flex items-center px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm"
-					>Load more</button
-				>
+					data-page="<%= pagination.currentPage %>"
+					data-username="<%= profile.username %>"
+					class="inline-flex items-center px-4 py-2 rounded-md bg-white border border-gray-200 shadow-sm">
+					Load more
+				</button>
 			</div>
 			<% } %>
 		</section>
@@ -206,54 +171,124 @@ viewer.username === profileUser.username) { %>
 </main>
 
 <script>
-	(function(){
-	  const btn = document.getElementById('followBtn');
-	  if (!btn) return;
-	  const username = btn.dataset.username || '';
-	  const labelEl = document.getElementById('followLabel');
-	  const countEl = document.getElementById('followersCount');
-	  let following = btn.dataset.following === 'true';
-	  const csrf = <%= (typeof csrfToken !== 'undefined' && csrfToken) ? JSON.stringify(csrfToken) : 'null' %>;
+// Follow/Unfollow functionality
+(function(){
+	const btn = document.getElementById('followBtn');
+	if (!btn) return;
+	
+	const username = btn.dataset.username || '';
+	const labelEl = document.getElementById('followLabel');
+	const countEl = document.getElementById('followersCount');
+	let following = btn.dataset.following === 'true';
 
-	  function setBtnState(isFollowing, followersCount){
-	    btn.setAttribute('aria-pressed', isFollowing ? 'true' : 'false');
-	    btn.dataset.following = isFollowing ? 'true' : 'false';
-	    if (labelEl) labelEl.textContent = isFollowing ? 'Unfollow' : 'Follow';
-	    if (typeof followersCount === 'number' && countEl) countEl.textContent = String(Math.max(0, followersCount));
-	  }
+	function setBtnState(isFollowing, followersCount){
+		btn.setAttribute('aria-pressed', isFollowing ? 'true' : 'false');
+		btn.dataset.following = isFollowing ? 'true' : 'false';
+		btn.className = `inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${isFollowing ? 'bg-white text-gray-800 border border-gray-200 shadow-sm' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'}`;
+		if (labelEl) labelEl.textContent = isFollowing ? 'Unfollow' : 'Follow';
+		if (typeof followersCount === 'number' && countEl) {
+			countEl.textContent = String(Math.max(0, followersCount));
+		}
+	}
 
-	  btn.addEventListener('click', async function(){
-	    if (!username) return;
-	    btn.disabled = true;
-	    const prevFollowing = following;
-	    const prevCount = countEl ? parseInt(countEl.textContent || '0', 10) : NaN;
-	    const optimisticCount = Number.isNaN(prevCount) ? prevCount : prevCount + (prevFollowing ? -1 : 1);
-	    following = !prevFollowing;
-	    setBtnState(following, Number.isNaN(optimisticCount) ? undefined : optimisticCount);
+	btn.addEventListener('click', async function(){
+		if (!username) return;
+		btn.disabled = true;
+		
+		const prevFollowing = following;
+		const prevCount = countEl ? parseInt(countEl.textContent || '0', 10) : NaN;
+		const optimisticCount = Number.isNaN(prevCount) ? prevCount : prevCount + (prevFollowing ? -1 : 1);
+		
+		following = !prevFollowing;
+		setBtnState(following, optimisticCount);
 
-	    try {
-	      const headers = { 'Content-Type': 'application/json' };
-	      if (csrf && csrf !== 'null') headers['X-CSRF-Token'] = csrf;
-	      const res = await fetch('/users/' + encodeURIComponent(username) + '/follow', {
-	        method: 'POST',
-	        credentials: 'same-origin',
-	        headers
-	      });
-	      const data = await res.json();
-	      if (!res.ok || !data || typeof data.success === 'undefined') throw new Error('Request failed');
-	      following = !!data.following;
-	      const serverCount = (typeof data.followersCount !== 'undefined') ? Number(data.followersCount) : undefined;
-	      setBtnState(following, serverCount);
-	    } catch (e) {
-	      following = prevFollowing;
-	      setBtnState(prevFollowing, Number.isNaN(prevCount) ? undefined : prevCount);
-	      console.error('Follow toggle failed:', e);
-	      alert('Could not update follow status. Try again.');
-	    } finally {
-	      btn.disabled = false;
-	    }
-	  });
-	})();
+		try {
+			const res = await fetch('/users/' + encodeURIComponent(username) + '/follow', {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: { 'Content-Type': 'application/json' }
+			});
+			
+			const data = await res.json();
+			if (!res.ok || !data || !data.success) throw new Error('Request failed');
+			
+			following = !!data.following;
+			const serverCount = typeof data.followersCount !== 'undefined' ? Number(data.followersCount) : undefined;
+			setBtnState(following, serverCount);
+		} catch (e) {
+			following = prevFollowing;
+			setBtnState(prevFollowing, prevCount);
+			console.error('Follow toggle failed:', e);
+			alert('Could not update follow status. Try again.');
+		} finally {
+			btn.disabled = false;
+		}
+	});
+})();
+
+// Load More functionality
+(function(){
+	const loadMoreBtn = document.getElementById('loadMoreBtn');
+	if (!loadMoreBtn) return;
+	
+	let currentPage = parseInt(loadMoreBtn.dataset.page) || 1;
+	const username = loadMoreBtn.dataset.username;
+	const container = document.getElementById('postsContainer');
+	
+	loadMoreBtn.addEventListener('click', async function(){
+		loadMoreBtn.disabled = true;
+		loadMoreBtn.textContent = 'Loading...';
+		
+		try {
+			const nextPage = currentPage + 1;
+			const res = await fetch(`/user/${username}?page=${nextPage}`, {
+				headers: {
+					'X-Requested-With': 'XMLHttpRequest',
+					'Accept': 'application/json'
+				}
+			});
+			
+			if (!res.ok) throw new Error('Failed to load posts');
+			
+			const data = await res.json();
+			
+			if (data.posts && data.posts.length > 0) {
+				// Append new posts to container
+				data.posts.forEach(post => {
+					const article = document.createElement('article');
+					article.className = 'break-inside-avoid mb-4';
+					article.innerHTML = `
+						<a href="/pin/${post._id}" class="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+							${post.image ? 
+								`<img src="${post.image}" alt="${post.imageTitle || 'post image'}" class="w-full object-cover" style="max-height: 700px" loading="lazy" decoding="async" />` :
+								`<div class="w-full bg-gray-100 aspect-video flex items-center justify-center text-gray-400">No image</div>`
+							}
+						</a>
+						${post.imageTitle ? `<div><h4 class="mt-3 font-medium text-gray-50">${post.imageTitle}</h4></div>` : ''}
+					`;
+					container.appendChild(article);
+				});
+				
+				currentPage = nextPage;
+				
+				// Hide button if no more pages
+				if (!data.pagination || !data.pagination.hasNextPage) {
+					loadMoreBtn.style.display = 'none';
+				} else {
+					loadMoreBtn.textContent = 'Load more';
+				}
+			} else {
+				loadMoreBtn.style.display = 'none';
+			}
+		} catch (e) {
+			console.error('Failed to load more posts:', e);
+			loadMoreBtn.textContent = 'Failed to load. Try again';
+		} finally {
+			loadMoreBtn.disabled = false;
+		}
+	});
+})();
 </script>
 
-<%- include('partials/footer') %> <% } %>
+<%- include('partials/footer') %> 
+<% } %>
